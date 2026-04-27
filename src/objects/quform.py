@@ -2,9 +2,8 @@
 
 import sympy as sp
 
-from .monoid import Monoid
+from .._core.monoid import Monoid
 from .face import Face
-# from .polyform import Polyform
 
 class quForm(Monoid):
     def __init__(self, data=None, dual=False):
@@ -59,7 +58,7 @@ class quForm(Monoid):
         return quForm([set(c) for c in normalized])
 
     def _poly_class(self):
-        from .polyform import Polyform
+        from ..combinations.polyform import Polyform
         return Polyform
 
     def __str__(self):
@@ -87,7 +86,7 @@ class quForm(Monoid):
         return quForm([set(c) for c in normalized])
 
     def __rmul__(self, other):
-        from .polyform import Polyform
+        from ..combinations.polyform import Polyform
         if isinstance(other, (int, float, sp.Expr)): return Polyform({self: other})
         raise TypeError("Умножение формы возможно только на другую форму или число")
 

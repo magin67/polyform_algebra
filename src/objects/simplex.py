@@ -3,7 +3,7 @@
 import sympy as sp
 
 # from src import Monoid, PolySimplex
-from .monoid import Monoid
+from .._core.monoid import Monoid
 
 class Simplex(Monoid):
     def __init__(self, elements, sign=1, dual=False):
@@ -60,7 +60,7 @@ class Simplex(Monoid):
             return NotImplemented
 
     def _poly_class(self):
-        from .polysimplex import PolySimplex
+        from ..combinations.polysimplex import PolySimplex
         return PolySimplex
 
     def permute(self, indices):
@@ -72,7 +72,7 @@ class Simplex(Monoid):
         return Simplex(new_components, sign=self.sign)
 
     def boundary(self):
-        from .polysimplex import PolySimplex
+        from ..combinations.polysimplex import PolySimplex
         if self.is_zero(): return self.zero()
         n = len(self.components)
         if n == 0: return self.zero()

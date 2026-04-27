@@ -4,14 +4,13 @@ from collections import Counter
 import sympy as sp
 import numpy as np
 
-# from src import LinearCombination, quForm, Basis, AffineVector, Face, Vector
+from .._core.lincomb import LinearCombination
+# from .._core.basis import Basis
 
-from .lincomb import LinearCombination
-from .basis import Basis
-from .vector import Vector
-from .affine_vector import AffineVector
-from .quform import quForm
-from .face import Face
+from ..objects.vector import Vector
+from ..objects.affine_vector import AffineVector
+from ..objects.quform import quForm
+from ..objects.face import Face
 
 class Polyform(LinearCombination):
     @classmethod

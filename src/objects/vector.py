@@ -1,6 +1,6 @@
 # @title Вектор
 
-from .monoid import Monoid
+from .._core.monoid import Monoid
 from .affine_vector import  AffineVector
 
 class Vector(Monoid):

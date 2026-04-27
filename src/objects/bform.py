@@ -2,7 +2,7 @@
 
 # from src import Monoid, quForm
 
-from .monoid import Monoid
+from .._core.monoid import Monoid
 from .quform import quForm
 # from .polyform import Polyform
 
@@ -40,11 +40,11 @@ class bForm(Monoid):
         return bForm(new_vectors, dual=self.dual ^ other.dual)
 
     def _poly_class(self):
-        from .poly_bf import PolyBForm
+        from ..combinations.poly_bf import PolyBForm
         return PolyBForm
 
     def expand(self): # Преобразует bForm в Polyform, перемножая to_polyform() каждого вектора.
-        from .polyform import Polyform
+        from ..combinations.polyform import Polyform
         result = Polyform(quForm.one())
         for v in self.components:
             result = result * v.to_polyform()

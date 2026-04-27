@@ -3,9 +3,9 @@
 from collections import Counter
 import sympy as sp
 
-from .lincomb import LinearCombination
+from .._core.lincomb import LinearCombination
 from .simplex import Simplex
-from .polysimplex import PolySimplex
+from ..combinations.polysimplex import PolySimplex
 
 class AffineVector(PolySimplex):
     def __init__(self, data=None):
@@ -96,7 +96,7 @@ class AffineVector(PolySimplex):
 
     def bilinear_form(self, other): # Билинейная форма двух векторов - это форма их скалярного произведения
         from .quform import quForm
-        from .polyform import Polyform
+        from ..combinations.polyform import Polyform
         points = set()
         for term in self.terms:
             points.update(term.components)
@@ -137,12 +137,12 @@ class AffineVector(PolySimplex):
         return self @ self
 
     def in_basis(self, basis): # Возвращает LinearCombination, представляющую данный вектор в другом базисе.
-        from .lincomb import LinearCombination
+        from .._core.lincomb import LinearCombination
         return LinearCombination(basis.coordinates_of(self))
 
     def to_polyform_in_basis(self, basis): # Полиформа вектора в базисе ортогональных векторов
         from .bform import bForm
-        from .poly_bf import PolyBForm
+        from ..combinations.poly_bf import PolyBForm
         if not basis.is_orthogonal: raise NotImplementedError("Only orthogonal bases are supported")
         lc = self.in_basis(basis)
         terms = {}

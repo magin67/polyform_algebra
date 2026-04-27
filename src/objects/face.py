@@ -1,6 +1,6 @@
 # @title Граница – набор непересекающихся компонент
 
-from .monoid import Monoid
+from .._core.monoid import Monoid
 from .simplex import Simplex
 
 class Face(Monoid):
@@ -81,7 +81,7 @@ class Face(Monoid):
         return Face(normalized)
 
     def _poly_class(self):
-        from .polyface import PolyFace
+        from ..combinations.polyface import PolyFace
         return PolyFace
 
     def __repr__(self):

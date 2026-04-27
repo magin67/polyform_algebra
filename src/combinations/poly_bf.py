@@ -1,5 +1,7 @@
 # @title Полиформа границ - косвенное задание
 
+from src import Basis, quForm, bForm, Polyform
+
 class PolyBForm(Polyform):
     @classmethod
     def from_eigenvectors(cls, poly, normalized=False, tolerance=1e-10):
