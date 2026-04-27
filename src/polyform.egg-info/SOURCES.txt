@@ -1,0 +1,6 @@
+pyproject.toml
+src/polyform.egg-info/PKG-INFO
+src/polyform.egg-info/SOURCES.txt
+src/polyform.egg-info/dependency_links.txt
+src/polyform.egg-info/top_level.txt
+tests/test_simplex.py
