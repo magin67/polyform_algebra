@@ -72,7 +72,7 @@ class Basis:
         for b in self.get_elements():
             norm2 = b.dot(b)
             if norm2 != 0:
-                coeff = vector.dot(b) / norm2
+                coeff = b.dot(vector) / norm2
                 if coeff != 0:
                     coeffs[b] = coeff
         return coeffs
