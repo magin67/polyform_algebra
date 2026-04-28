@@ -1,8 +1,5 @@
 # @title Полиформа границ - косвенное задание
 
-from src import Polyform
-
-
 from .._core.basis import Basis
 from ..objects.quform import quForm
 from ..objects.bform import bForm
