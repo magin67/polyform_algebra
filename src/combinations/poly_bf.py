@@ -1,6 +1,7 @@
 # @title Полиформа границ - косвенное задание
 
 from .._core.basis import Basis
+from ..objects.affine_vector import AffineVector
 from ..objects.quform import quForm
 from ..objects.bform import bForm
 
@@ -11,13 +12,19 @@ class PolyBForm(Polyform):
     def from_eigenvectors(cls, poly, normalized=False, tolerance=1e-10):
         eigen_pairs = poly.eigenvectors(normalized=normalized, tolerance=tolerance)
         terms = {}
-        all_vectors = []
+        all_vectors = []  # для базиса (AffineVector)
         for ev, vec in eigen_pairs:
             if abs(ev) < tolerance: continue # пропускаем нулевой вектор
-            all_vectors.append(vec)
             bf = bForm([vec])
             if normalized: terms[bf] = terms.get(bf, 0) + ev
             else: terms[bf] = terms.get(bf, 0) + 1
+
+            if not isinstance(vec, AffineVector): # предполагаем, что vec — это Vector с атрибутом _coeffs
+                affine_vec = AffineVector(vec._coeffs)
+            else:
+                affine_vec = vec
+            all_vectors.append(affine_vec)
+
         obj = cls(terms)
         # Создаём базис из всех векторов (кратность 0)
         basis = Basis({vec: 0 for vec in all_vectors}, default_multiplicity=0)
