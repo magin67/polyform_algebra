@@ -2,7 +2,6 @@
 
 import sympy as sp
 
-# from src import Monoid, PolySimplex
 from .._core.monoid import Monoid
 
 class Simplex(Monoid):

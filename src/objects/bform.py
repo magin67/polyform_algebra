@@ -1,11 +1,7 @@
 # @title Форма границ - косвенное задание
 
-# from src import Monoid, quForm
-
 from .._core.monoid import Monoid
 from .quform import quForm
-# from .polyform import Polyform
-
 
 class bForm(Monoid):
     def __init__(self, vectors, dual=False):

@@ -1,6 +1,8 @@
 # @title Полиграница – линейная комбинация границ
 
-from src import LinearCombination, Face, PolySimplex
+from .._core.lincomb import LinearCombination
+from ..objects.face import Face
+from ..combinations.polysimplex import PolySimplex
 
 class PolyFace(LinearCombination):
     def __init__(self, data=None):
