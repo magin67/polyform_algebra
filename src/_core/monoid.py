@@ -1,7 +1,6 @@
 # @title Моноид - Это объекты, которые можно умножать друг на друга
 
 from abc import ABC, abstractmethod
-import sympy as sp
 
 class Monoid(ABC):
     _zero_instances = {}

@@ -1,13 +1,11 @@
 # @title Линейная комбинация
 
-from typing import Dict, Union, List, Set, Tuple, Any
+# from typing import Dict, Union, List, Set, Tuple, Any
 from abc import ABC, abstractmethod
 from collections import Counter
-import warnings
 import sympy as sp
 
 from .monoid import Monoid
-
 
 class LinearCombination(ABC):
     @staticmethod
@@ -17,14 +15,9 @@ class LinearCombination(ABC):
         if abs(r - x) < tol: return float(r)
         return x
 
-    @property
-    def basis(self):
-        return self._basis
-
     def __init__(self, data=None, term_type=None):
         self.terms = Counter()
         self.term_type = term_type
-        self._basis = None
         if data is None:
             self._update_cached_grades()
             return
@@ -50,7 +43,6 @@ class LinearCombination(ABC):
             if rounded == 0: del self.terms[t]
             else: self.terms[t] = rounded
         self._update_cached_grades() # Обновляем кэшированные грейды
-        self._update_basis()
 
     def _create_empty(self): return self.__class__()
 
@@ -84,26 +76,6 @@ class LinearCombination(ABC):
             self._max_grade = max(grades)
             self._kind = 'homogeneous' if self._min_grade == self._max_grade else 'mixed'
             self._size = len(self.terms)
-
-    def _update_basis(self, force=False): # Обновляет локальный базис на основе элементов всех термов
-        if getattr(self, '_skip_basis_update', False): return
-        all_elems = set()
-        mult_dict = {}
-        for term in self.terms:
-            for elem in term.get_elements():
-                all_elems.add(elem)
-                # Кратность элемента: если у elem есть атрибут multiplicity, иначе 1
-                mult = getattr(elem, 'multiplicity', 1)
-                if elem in mult_dict:
-                    if mult_dict[elem] != mult: # Конфликт кратностей – можно выбросить предупреждение или выбрать первую
-                        pass
-                else:
-                    mult_dict[elem] = mult
-        if not all_elems:
-            self._basis = None
-        else:
-            from .basis import Basis
-            self._basis = Basis({elem: mult_dict[elem] for elem in all_elems}, default_multiplicity=0)
 
     def size(self): return self._size
 

@@ -86,6 +86,14 @@ class Simplex(Monoid):
         sign = "-" if self.sign == -1 else ""
         return f"{sign}{list(self.components)}"
 
+
     def __str__(self):
-        sign_str = "-" if self.sign == -1 else ""
-        return f"{sign_str}{list(self.components)}"
+        if self.is_zero(): return "[]"
+        if self.is_one(): return "[1]"
+        sign = "-" if self.sign == -1 else ""
+        inner = ", ".join(str(c) for c in self.components)   # str, а не repr
+        return f"{sign}[{inner}]"
+
+    # def __str__(self):
+    #     sign_str = "-" if self.sign == -1 else ""
+    #     return f"{sign_str}{list(self.components)}"

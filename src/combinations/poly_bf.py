@@ -1,7 +1,7 @@
 # @title Полиформа границ - косвенное задание
 
 from .._core.basis import Basis
-from ..objects.affine_vector import AffineVector
+from .affine_vector import AffineVector
 from ..objects.quform import quForm
 from ..objects.bform import bForm
 
@@ -12,25 +12,19 @@ class PolyBForm(Polyform):
     def from_eigenvectors(cls, poly, normalized=False, tolerance=1e-10):
         eigen_pairs = poly.eigenvectors(normalized=normalized, tolerance=tolerance)
         terms = {}
-        all_vectors = []  # для базиса (AffineVector)
+        basis_vectors = []
         for ev, vec in eigen_pairs:
-            if abs(ev) < tolerance: continue # пропускаем нулевой вектор
+            if abs(ev) < tolerance:
+                continue
+            basis_vectors.append(vec)        # vec — это Vector (или AffineVector)
             bf = bForm([vec])
-            if normalized: terms[bf] = terms.get(bf, 0) + ev
-            else: terms[bf] = terms.get(bf, 0) + 1
-
-            if not isinstance(vec, AffineVector): # предполагаем, что vec — это Vector с атрибутом _coeffs
-                affine_vec = AffineVector(vec._coeffs)
+            if normalized:
+                terms[bf] = terms.get(bf, 0) + ev
             else:
-                affine_vec = vec
-            all_vectors.append(affine_vec)
-
+                terms[bf] = terms.get(bf, 0) + 1
         obj = cls(terms)
-        # Создаём базис из всех векторов (кратность 0)
-        basis = Basis({vec: 0 for vec in all_vectors}, default_multiplicity=0)
-        basis.is_orthogonal = True
-        # Присваиваем базис объекту (если LinearCombination имеет атрибут _basis)
-        obj._basis = basis
+        obj._basis = Basis(basis_vectors)
+        obj._basis.is_orthogonal = True
         return obj
 
     @classmethod

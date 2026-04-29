@@ -1,7 +1,7 @@
 # @title Вектор
 
 from .._core.monoid import Monoid
-from .affine_vector import  AffineVector
+from ..combinations.affine_vector import  AffineVector
 
 class Vector(Monoid):
     _cache = {}
@@ -26,12 +26,20 @@ class Vector(Monoid):
         pass
 
     def dot(self, other):
-        if not isinstance(other, (Vector, AffineVector)):
+        if isinstance(other, Vector):
+            total = 0
+            for sym, c in self._coeffs.items():
+                total += c * other._coeffs.get(sym, 0)
+            return total
+        elif isinstance(other, AffineVector):
+            total = 0
+            for term, coeff in other.terms.items():
+                # term — Simplex([sym])
+                sym = term.components[0]
+                total += coeff * self._coeffs.get(sym, 0)
+            return total
+        else:
             return NotImplemented
-        total = 0
-        for sym, c in self._coeffs.items():
-            total += c * other._coeffs.get(sym, 0)
-        return total
 
     def __hash__(self):
         return hash(self._key)

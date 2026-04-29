@@ -8,7 +8,7 @@ from .._core.lincomb import LinearCombination
 # from .._core.basis import Basis
 
 from ..objects.vector import Vector
-from ..objects.affine_vector import AffineVector
+from .affine_vector import AffineVector
 from ..objects.quform import quForm
 from ..objects.face import Face
 
