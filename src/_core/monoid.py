@@ -26,7 +26,7 @@ class Monoid(ABC):
         if cls not in cls._one_instances:
             obj = cls.__new__(cls)
             obj.components = ()
-            obj.multiplicity = -2
+            obj.multiplicity = 1
             obj.dual = False
             cls._one_instances[cls] = obj
         return cls._one_instances[cls]
@@ -66,31 +66,6 @@ class Monoid(ABC):
         if self.is_one(): return other
         if other.is_one(): return self
         return NotImplemented
-
-    # def __add__(self, other):
-    #     if not isinstance(other, Monoid): return NotImplemented
-    #     poly_class = self._poly_class()
-    #     # Если other уже является линейной комбинацией, делегируем
-    #     if isinstance(other, poly_class): return NotImplemented
-    #     return poly_class({self: 1, other: 1})
-
-    # def __sub__(self, other):
-    #     return self + (-other)
-
-    # def __neg__(self):
-    #     poly_class = self._poly_class()
-    #     return poly_class({self: -1})
-
-    # def __rmul__(self, scalar):
-    #     if isinstance(scalar, (int, float, sp.Expr)):
-    #         poly_class = self._poly_class()
-    #         return poly_class({self: scalar})
-    #     return NotImplemented
-
-    # def _poly_class(self): # Возвращает класс линейных комбинаций для данного моноида.
-    #     # По умолчанию — общий LinearCombination. Наследники могут переопределить.
-    #     from src.lincomb import LinearCombination
-    #     return LinearCombination
 
     # --- Представление ---
     def __str__(self):

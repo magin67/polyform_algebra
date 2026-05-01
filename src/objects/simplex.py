@@ -2,19 +2,21 @@
 
 import sympy as sp
 
-from .._core.monoid import Monoid
+from _core.monoid import Monoid
 
 class Simplex(Monoid):
-    def __init__(self, elements, sign=1, dual=False):
-        # Убираем дубликаты, сохраняя порядок первого вхождения
-        seen = set()
-        unique = []
-        for e in elements:
-            if e not in seen:
-                seen.add(e)
-                unique.append(e)
-        super().__init__(unique)
+    def __init__(self, elements, sign=1, multiplicity=None, dual=False):
+        if len(elements) != len(set(elements)):
+            raise ValueError("Simplex contains duplicate elements")
+        if multiplicity is None:
+            mult = 1
+            for e in elements: # Вычисляем multiplicity как произведение multiplicity каждого элемента
+                mult *= getattr(e, 'multiplicity', 1)  # у элементов по умолчанию multiplicity=1
+        else:
+            mult = multiplicity
+        super().__init__(tuple(elements), multiplicity=mult, dual=dual)
         self.sign = sign
+
 
     def canonical(self):
         if self.is_zero():
@@ -86,14 +88,9 @@ class Simplex(Monoid):
         sign = "-" if self.sign == -1 else ""
         return f"{sign}{list(self.components)}"
 
-
     def __str__(self):
         if self.is_zero(): return "[]"
         if self.is_one(): return "[1]"
         sign = "-" if self.sign == -1 else ""
         inner = ", ".join(str(c) for c in self.components)   # str, а не repr
         return f"{sign}[{inner}]"
-
-    # def __str__(self):
-    #     sign_str = "-" if self.sign == -1 else ""
-    #     return f"{sign_str}{list(self.components)}"

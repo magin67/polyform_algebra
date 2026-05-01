@@ -206,6 +206,13 @@ class LinearCombination(ABC):
         mg = self.max_grade()
         return [term for term in self.terms if term.grade() == mg]
 
+    def multiplicity(self): # Кратность комбинации - сумма для всех термов: коэффициент * multiplicity(term)
+        total = 0.0
+        for term, coeff in self.terms.items():
+            mult = getattr(term, 'multiplicity', 0)
+            total += coeff * mult
+        return total
+
     def sum_coeff(self, grade = None): # Сумма коэффициентов всех термов заданного грейда
         if grade == -1: return 0
         comb = self if grade is None else self.extract_grade(grade)
