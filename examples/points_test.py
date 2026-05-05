@@ -10,7 +10,7 @@ from objects.simplex import Simplex
 # a, b = Point('a'), Point('b')
 a, b, c = Point.create_list(['a', 'b', 'c'])
 
-print(a*b, a[0])
+print("1: ", a*b, a[0])
 
 lc = (a + b) / 2
 # print(lc)                     # 0.5*Point(a) + 0.5*Point(b)
@@ -18,11 +18,21 @@ lc = (a + b) / 2
 
 # Создание точки из линейной комбинации
 d = Point('d', frame=lc)       # сохраняет lc
-print(d[0]*a[0])                 # та же комбинация
+print("2: ", d[0]*a[0])                 # та же комбинация
 
 v = Vector('v', frame=b - a)  # multiplicity = 0
 
 s1 = Simplex([a, b])
-print(s1.boundary())   # 1*[b] + (-1)*[a]  -> [b] - [a]
+print("3: ", s1.boundary())   # 1*[b] + (-1)*[a]  -> [b] - [a]
 s2 = Simplex([a, v])
-print(s2.boundary())   # v имеет mult=0 -> только слагаемое для a: 1*[v] -> [v]
+print("4: ", s2.boundary())   # v имеет mult=0 -> только слагаемое для a: 1*[v] -> [v]
+
+
+s3 = Simplex([(a, b), a])
+print("s3: ", s3)
+
+s4 = Simplex([(a, b), c])
+print("s4: ", s4.to_polysimplex())
+
+s5 = Simplex([(a, b), c])
+print("m5: ", s2*s4)

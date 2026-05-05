@@ -6,6 +6,10 @@ from _core.lincomb import LinearCombination
 from objects.simplex import Simplex
 
 class PolySimplex(LinearCombination):
+    @classmethod
+    def one(cls):
+        return cls({Simplex.one(): 1})
+
     @staticmethod
     def add_term(prepared, term, coeff):
         cterm = term.canonical() # Приводим симплекс к каноническому виду
