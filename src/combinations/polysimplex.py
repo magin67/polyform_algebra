@@ -2,8 +2,8 @@
 
 from collections import Counter
 
-from .._core.lincomb import LinearCombination
-from ..objects.simplex import Simplex
+from _core.lincomb import LinearCombination
+from objects.simplex import Simplex
 
 class PolySimplex(LinearCombination):
     @staticmethod
@@ -39,23 +39,31 @@ class PolySimplex(LinearCombination):
         super().__init__(prepared, term_type=Simplex)
 
     def __eq__(self, other):
-        if not isinstance(other, PolySimplex):
-            return False
+        if not isinstance(other, PolySimplex): return False
         return (self - other).is_zero()
 
     def __str__(self):
         if self.is_zero(): return "0"
         parts = []
         for term, coeff in self.terms.items():
-            term_str = str(term)   # Simplex.__str__ возвращает "[a, b]" с учётом знака
-            if coeff == 1: parts.append(term_str)
-            elif coeff == -1: parts.append(f"-{term_str}")
-            else: parts.append(f"{coeff}*{term_str}")
-        # Объединяем с правильными знаками
+            # Нормализуем знак для вывода
+            if hasattr(term, 'sign') and term.sign == -1:
+                coeff = -coeff
+                term_str = str(term).lstrip('-')
+            else:
+                term_str = str(term)
+            if coeff == 1:
+                parts.append(term_str)
+            elif coeff == -1:
+                parts.append(f"-{term_str}")
+            else:
+                parts.append(f"{coeff}*{term_str}")
         result = parts[0]
         for part in parts[1:]:
-            if part[0] == '-': result += f" - {part[1:]}"
-            else: result += f" + {part}"
+            if part[0] == '-':
+                result += f" - {part[1:]}"
+            else:
+                result += f" + {part}"
         return result
 
     def __repr__(self):

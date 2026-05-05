@@ -1,47 +1,88 @@
 
 from objects.simplex import Simplex
-from _core.lincomb import LinearCombination
+from combinations.polysimplex import PolySimplex
 
+'''Элементы - точки, векторы и другие объекты 1-го грейда'''
 class Element(Simplex):
-    @classmethod
-    def _validate_linear_combination(cls, comb, required_multiplicity):
-        # if not isinstance(comb, LinearCombination):
-        #     raise TypeError("Data must be a LinearCombination")
-        if not comb.is_homogeneous():
-            raise ValueError("Linear combination is not homogeneous")
-        if comb.grade() != 1:
-            raise ValueError("Grade must be 1")
-        if abs(comb.multiplicity() - required_multiplicity) > 1e-10:
-            raise ValueError(f"Multiplicity must be {required_multiplicity}, got {comb.multiplicity()}")
-        return comb # Возвращаем комбинацию для сохранения
+    def __init__(self, name=None, frame=None, multiplicity=1, data=None):
+        self.name = name
+        self.user_data = data
+        self.frames = []
+        if frame is None:
+            self._auto_frame = True
+        else:
+            self._auto_frame = False
+            if isinstance(frame, PolySimplex):
+                self._validate_frame(frame, multiplicity)
+                self.frames.append(frame)
+            elif isinstance(frame, list):
+                for f in frame:
+                    self._validate_frame(f, multiplicity)
+                self.frames.extend(frame)
+            else:
+                raise TypeError("frame must be PolySimplex or list thereof")
+        super().__init__([self], multiplicity=multiplicity)
+        if self._auto_frame:
+            trivial = PolySimplex({self: 1})
+            self.frames.append(trivial)
 
-    def __init__(self, name='', data=None, multiplicity = 1):
-        self.data = data
-        if name is not None: self.name = str(name)
-        elif data is not None: self.name = str(data)
-        else: self.name = None
-        super().__init__([self], multiplicity = multiplicity)   # компонента – ссылка на себя
+    @staticmethod
+    def _validate_frame(poly, expected_multiplicity):
+        if not isinstance(poly, PolySimplex):
+            raise TypeError("Frame must be a PolySimplex")
+        if not poly.is_homogeneous():
+            raise ValueError("Frame is not homogeneous")
+        if poly.grade() != 1:
+            raise ValueError("Frame grade must be 1")
+        if abs(poly.multiplicity() - expected_multiplicity) > 1e-10:
+            raise ValueError(f"Frame multiplicity must be {expected_multiplicity}, got {poly.multiplicity()}")
 
+    def add_frame(self, poly):
+        self._validate_frame(poly, self.multiplicity)
+        self.frames.append(poly)
+
+    def __getitem__(self, idx):
+        return self.frames[idx]
+
+    def boundary(self): # Возвращает полисимплекс, представляющий кратность элемента
+        return PolySimplex({Simplex.one(): self.multiplicity})
+
+    # Безопасные хеш и равенство, чтобы избежать рекурсии через Simplex
     def __hash__(self):
-        return hash((self.name, id(self.data)))
+        if self.name:
+            return hash((self.__class__.__name__, self.name, self.multiplicity))
+        return hash((self.__class__.__name__, id(self), self.multiplicity))
 
     def __eq__(self, other):
-        return isinstance(other, Element) and self.name == other.name and self.data is other.data
+        if not isinstance(other, Element):
+            return False
+        if self.name and other.name:
+            return self.name == other.name and self.multiplicity == other.multiplicity
+        return self is other
 
+    def __str__(self):
+        if self.name:
+            return self.name
+        return f"{self.__class__.__name__}()"
+
+    def __repr__(self):
+        return self.__str__()
+
+    # --- Арифметика ---
     def __add__(self, other):
         if not isinstance(other, Element):
             return NotImplemented
-        return LinearCombination({self: 1, other: 1})
+        return PolySimplex({self: 1, other: 1})
 
     def __sub__(self, other):
         return self + (-other)
 
     def __neg__(self):
-        return LinearCombination({self: -1})
+        return PolySimplex({self: -1})
 
     def __mul__(self, other):
         if isinstance(other, (int, float)):
-            return LinearCombination({self: other})
+            return PolySimplex({self: other})
         return super().__mul__(other)
 
     def __rmul__(self, other):
@@ -54,38 +95,21 @@ class Element(Simplex):
             return self * (1.0 / scalar)
         return NotImplemented
 
-    def __repr__(self):
-        if self.multiplicity == 0: return f"Vector({self.name})"
-        elif self.multiplicity == 1: return f"Point({self.name})"
-        else: return f"Element({self.name})"
 
-    def __str__(self):
-        return self.name if self.name is not None else f"p{id(self)}"
-
-
+'''Точки - это элементы кратности 1'''
 class Point(Element):
-    def __init__(self, name=None, data=None):
-        if isinstance(data, LinearCombination):
-            self._validate_linear_combination(data, 1)
-        super().__init__(name=name, data=data, multiplicity=1)
+    def __init__(self, name=None, frame=None, data=None):
+        super().__init__(name=name, frame=frame, multiplicity=1, data=data)
 
-    @staticmethod
-    def create_list(names_or_objs):
-        if isinstance(names_or_objs, (list, tuple)):
-            return [Point(name) for name in names_or_objs]
-        else:
-            return [Point(name) for name in names_or_objs]  # на самом деле нужно обработать случай одного элемента
+    @classmethod
+    def create_list(cls, names):
+        return [cls(name) for name in names]
 
-
+'''Векторы - это элементы кратности 0'''
 class Vector(Element):
-    def __init__(self, name=None, data=None):
-        if isinstance(data, LinearCombination):
-            self._validate_linear_combination(data, 0)
-        super().__init__(name=name, data=data, multiplicity=0)
+    def __init__(self, name=None, frame=None, data=None):
+        super().__init__(name=name, frame=frame, multiplicity=0, data=data)
 
-    @staticmethod
-    def create_list(names_or_objs):
-        if isinstance(names_or_objs, (list, tuple)):
-            return [Vector(name) for name in names_or_objs]
-        else:
-            return [Vector(names_or_objs)]
+    @classmethod
+    def create_list(cls, names):
+        return [cls(name) for name in names]

@@ -1,6 +1,6 @@
 # @title Граница – набор непересекающихся компонент
 
-from .._core.monoid import Monoid
+from _core.monoid import Monoid
 from .simplex import Simplex
 
 class Face(Monoid):
