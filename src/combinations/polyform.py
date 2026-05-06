@@ -5,7 +5,7 @@ import numpy as np
 
 from .polysimplex import Polysimplex
 from objects.quform import quForm
-from objects.element import Vector   # новый класс вектора
+from objects.element import Point, Vector   # новый класс вектора
 
 class PolyForm(Polysimplex):
     @classmethod
