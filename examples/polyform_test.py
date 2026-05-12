@@ -2,12 +2,12 @@ import sys, os
 # sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
 
-from objects.element import Point, Vector
-from objects.quform import quForm
+from src.objects.element import Point, Vector
+from src.objects.quform import quForm
 
-from combinations.polysimplex import Polysimplex
-from combinations.polyform import Polyform
-from _core.basis import Basis
+from src.combinations.polysimplex import Polysimplex
+from src.combinations.polyform import Polyform
+from src._core.basis import Basis
 
 import numpy as np
 import networkx as nx
@@ -69,17 +69,11 @@ Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
 G_petersen = nx.petersen_graph()
 L_petersen = Polyform.from_networkx(G_petersen)
 
-PathEig = Path4.to_eigenbasis()
+PathEig, B_eigen = Path4.to_eigenbasis()
 print("Path.eigen: ", PathEig)
 print("Path.eigen.expand: ", PathEig.expand())
 
 points = list(Path4.get_elements())
-eigenvectors = list(PathEig.get_elements())
-B_eigen = Basis(eigenvectors, is_orthonormal=True)
-
-const_frame = Polysimplex({p: 1/len(points) for p in points})
-ort_point = Point(name='ort', frame=const_frame)
-B_eigen.add_element(ort_point)
 
 print("Basis of v: ", B_eigen)
 
@@ -96,7 +90,7 @@ v.add_frame(frame=v.in_basis(0, B_points, B_eigen), basis=B_eigen)
 
 f_veig = v[1].to_quadratic_form(B_eigen)
 
-print("v = (c - a) in eig: ", v[1])
+print("v = (d - a) in eig: ", v[1])
 print("<v>^2 in eig: ", f_veig)
 
 # Метрика:

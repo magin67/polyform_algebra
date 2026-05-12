@@ -5,7 +5,7 @@ import numpy as np
 
 from .polysimplex import Polysimplex
 from objects.quform import quForm
-from objects.element import Element, Point, Vector   # новый класс вектора
+from objects.element import Element, Point   # новый класс вектора
 
 class Polyform(Polysimplex):
     @classmethod
@@ -199,90 +199,100 @@ class Polyform(Polysimplex):
 
         return Polyform(terms_counter)
 
-
-    # --- Диагонализация - приведение к базису из собственных векторов ---
-
-    def to_laplacian(self):
+    def to_matrix(self):
+        """
+        Преобразует полиформу 1-го порядка в матрицу.
+        Для термов quForm([(a,b)]) добавляет внедиагональные элементы,
+        для термов quForm([a]) — диагональные.
+        Возвращает (matrix, index), где index — словарь {элемент: индекс}.
+        """
         if not self.is_homogeneous() or self.grade() != 1:
             raise ValueError("Полиформа должна быть однородной и иметь грейд 1")
-        vertices = sorted(self.get_elements(), key=str)
-        n = len(vertices)
-        idx = {v: i for i, v in enumerate(vertices)}
-        L = np.zeros((n, n))
+
+        # Собираем все элементы (точки или векторы) из полиформы
+        elements = sorted(self.get_elements('all'), key=str)
+        n = len(elements)
+        idx = {elem: i for i, elem in enumerate(elements)}
+        M = np.zeros((n, n))
+
         for term, coeff in self.terms.items():
-            # term — quForm (симплекс), его компоненты — кортежи или атомы
             if len(term.components) != 1:
                 raise ValueError("Форма должна состоять из одной компоненты")
             comp = term.components[0]
-            if isinstance(comp, tuple) and len(comp) == 2:
+            if isinstance(comp, tuple) and len(comp) == 2: # Граничная форма (b - a)
                 a, b = comp
-                if a not in idx or b not in idx:
-                    continue
+                if a not in idx or b not in idx: continue
                 i, j = idx[a], idx[b]
-                L[i, j] -= coeff
-                L[j, i] -= coeff
-                L[i, i] += coeff
-                L[j, j] += coeff
-            else:
-                # возможен атомарный случай: term = quForm([a,b]) — это два атома?
-                # Но для формы 1-го порядка должны быть только кортежи из 2 элементов
-                raise ValueError("Неподдерживаемый формат формы для лапласиана")
-        return L, idx
+                M[i, j] -= coeff
+                M[j, i] -= coeff
+                M[i, i] += coeff
+                M[j, j] += coeff
+            else: # Атомарная форма (точка или вектор)
+                if comp not in idx: continue
+                i = idx[comp]
+                M[i, i] += coeff
+
+        return M, idx
+
+    # --- Диагонализация - приведение к базису из собственных векторов ---
 
     def to_eigenbasis(self, tolerance=1e-10):
         """
-        Преобразует граничную однородную полиформу 1-го порядка в диагональную форму
-        в базисе собственных векторов лапласиана.
+        Преобразует однородную полиформу 1-го порядка в диагональную форму в базисе собственных векторов.
         Возвращает Polyform: Σ λ_i * quForm([v_i]), где v_i — собственный вектор (как объект Vector),
         λ_i — собственное число.
         """
-        # from objects.quform import quForm
+        # import numpy as np
         # from objects.element import Vector
         # from .polysimplex import Polysimplex
+        from _core.basis import Basis
 
-        # Проверки
         if not self.is_homogeneous() or self.grade() != 1:
             raise ValueError("Полиформа должна быть однородной и иметь грейд 1")
-        if self.kind() != 'boundary':
-            raise ValueError("Метод to_eigenbasis применим только к граничным полиформам")
 
-        # Получаем лапласиан и отображение точка -> индекс
-        L, idx = self.to_laplacian()  # idx: {point: index}
-        if L.size == 0: return Polyform.zero()
+        # Получаем матрицу (лапласиан) и отображение элементов->индексы
+        M, idx = self.to_matrix()   # M — матрица, idx — {element: index}
+        n = M.shape[0]
+        if n == 0: return Polyform.zero(), Basis([])
 
-        # Вычисляем собственные значения и векторы (уже нормированные и отсортированные)
-        eig_vals, eig_vecs = np.linalg.eigh(L)
+        # Вычисляем собственные значения и векторы (отсортированы по возрастанию)
+        eig_vals, eig_vecs = np.linalg.eigh(M)
 
-        # Создаём словарь для новой полиформы
+        # Словарь для новой полиформы и список для базиса
         new_terms = {}
-        for k in range(len(eig_vals)):
+        basis_elements = []
+
+        for k in range(n):
             ev = eig_vals[k]
-            if abs(ev) < tolerance: continue
             vec = eig_vecs[:, k]
 
-            # Строим фрейм (Polysimplex) для собственного вектора как линейной комбинации точек
+            # Нормируем вектор (если уже нормирован, то норма = 1, но для нулевого собственного числа он может быть не нормирован)
+            norm = np.linalg.norm(vec)
+            if norm > tolerance: vec = vec / norm
+            else: continue # Если вектор нулевой (practically), пропускаем? Не должно быть.
+
+            # Строим фрейм (Polysimplex) для собственного вектора в исходном базисе
             frame_terms = {}
-            for point, i in idx.items():
+            for elem, i in idx.items():
                 coeff = vec[i]
                 if abs(coeff) < tolerance: continue
-                frame_terms[point] = coeff   # point — уже симплекс
-            # Создаём полисимплекс (фрейм)
+                frame_terms[elem] = coeff
             frame = Polysimplex(frame_terms)
 
-            # Создаём вектор с этим фреймом (кратность 0)
-            v = Vector(name='v' + str(k), frame=frame)
+            # Создаём элемент с этим фреймом и добавляем в базис
+            mult = frame.multiplicity()
+            elem = Element(name='v' + str(k), frame=frame, multiplicity=mult)
+            basis_elements.append(elem)
 
-            # Форма quForm от вектора (quForm([v]))
-            qform = quForm([v])
-            new_terms[qform] = new_terms.get(qform, 0.0) + ev
+            # Добавляем в полиформу (если собственное число не нулевое), коэффициент = собственное число.
+            if abs(ev) > tolerance:
+                qform = quForm([elem])
+                new_terms[qform] = new_terms.get(qform, 0.0) + ev
 
-        # Округляем коэффициенты и убираем нулевые
-        cleaned = {}
-        for form, coeff in new_terms.items():
-            coeff = self._round_value(coeff, tolerance)
-            if coeff != 0: cleaned[form] = coeff
-
-        return Polyform(cleaned)
+        # Создаём ортонормированный базис
+        basis = Basis(basis_elements, is_orthonormal = True)
+        # Возвращаем полиформу и базис
+        return Polyform(new_terms), basis
 
     def expand(self, index=0):
         if not self.is_homogeneous() or self.grade() != 1:
