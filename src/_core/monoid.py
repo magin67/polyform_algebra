@@ -26,7 +26,7 @@ class Monoid(ABC):
         if cls not in cls._one_instances:
             obj = cls.__new__(cls)
             obj.components = ()
-            obj.multiplicity = 1
+            obj.multiplicity = -2
             obj.dual = False
             cls._one_instances[cls] = obj
         return cls._one_instances[cls]

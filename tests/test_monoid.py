@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src._core.monoid import Monoid
-from abc import ABC
+# from abc import ABC
 
 class ConcreteMonoid(Monoid):
     """Конкретный наследник для тестирования (не абстрактный)."""
@@ -15,8 +15,7 @@ class ConcreteMonoid(Monoid):
     def __mul__(self, other):
         # Минимальная реализация для тестирования базового поведения
         result = super().__mul__(other)
-        if result is not NotImplemented:
-            return result
+        if result is not NotImplemented: return result
         # Имитация умножения двух конкретных моноидов (просто возвращаем себя)
         return self
 

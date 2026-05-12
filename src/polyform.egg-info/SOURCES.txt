@@ -1,6 +1,17 @@
 pyproject.toml
+setup.py
+src/_core/basis.py
+src/_core/lincomb.py
+src/_core/monoid.py
+src/_core/utils.py
+src/combinations/polyform.py
+src/combinations/polysimplex.py
+src/objects/element.py
+src/objects/quform.py
+src/objects/simplex.py
 src/polyform.egg-info/PKG-INFO
 src/polyform.egg-info/SOURCES.txt
 src/polyform.egg-info/dependency_links.txt
 src/polyform.egg-info/top_level.txt
+tests/test_monoid.py
 tests/test_simplex.py

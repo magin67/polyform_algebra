@@ -6,7 +6,7 @@ class Simplex(Monoid):
     @classmethod
     def zero(cls):
         obj = super().zero()
-        obj.sign = 1
+        obj.sign = 0
         return obj
 
     @classmethod
@@ -21,25 +21,6 @@ class Simplex(Monoid):
         need_normalize = False
         if len(elements) > 1:
             need_normalize = True
-
-        # elif len(elements) == 1:
-        #     comp = elements[0]
-        #     if isinstance(comp, tuple):
-        #         if len(comp) > 1:
-        #             need_normalize = True
-        #         else:
-        #             # Кортеж длины 1: либо точка, либо вектор
-        #             elem = comp[0]
-        #             if hasattr(elem, 'multiplicity') and elem.multiplicity == 0:
-        #                 # Вектор: выносим из кортежа
-        #                 elements = [elem]
-        #             else:
-        #                 # Точка: кортеж эквивалентен единице, просто игнорируем его
-        #                 elements = []   # пустой симплекс = единица?
-        #                 # Но единица — это особый объект, лучше сделать Simplex.one()
-        #                 # Пока для простоты оставим как есть, но потом нужно будет вернуть one.
-        #                 # Временно: если все элементы удалены, создаём единичный симплекс.
-        #                 # Однако в контексте создания Point из [self] мы сюда не попадём, так как self не кортеж.
 
         elif len(elements) == 1:
             comp = elements[0]
@@ -123,8 +104,7 @@ class Simplex(Monoid):
     def _normalize_base(base):
         seen = set()
         for e in base:
-            if e in seen:
-                return None
+            if e in seen: return None
             seen.add(e)
         return base
 
@@ -147,8 +127,7 @@ class Simplex(Monoid):
                     set_i = set(comps[i])
                     set_j = set(comps[j])
                     common = set_i & set_j
-                    if len(common) >= 2:
-                        return None
+                    if len(common) >= 2: return None
                     if len(common) == 1:
                         elem = next(iter(common))
                         # Циклический сдвиг i: общий элемент в конец
@@ -203,29 +182,24 @@ class Simplex(Monoid):
 
         # 1. Нормализация базы (проверка дубликатов)
         base = self._normalize_base(base)
-        if base is None:
-            return None
+        if base is None: return None
 
         # 2. Нормализация границ (слияние кортежей)
         boundaries = self._normalize_boundaries(boundaries)
-        if boundaries is None:
-            return None
+        if boundaries is None: return None
 
         # 3. Свёртка базы и границ
         merged = self._merge_base_and_boundaries(base, boundaries)
-        if merged is None:
-            return None
+        if merged is None: return None
         base, boundaries = merged
 
         # 4. После свёртки может оказаться, что в базе снова появились дубликаты? Проверим.
         base = self._normalize_base(base)
-        if base is None:
-            return None
+        if base is None: return None
 
         # 5. Также после свёртки границы могли приобрести общие элементы? В теории нет, но перестрахуемся
         boundaries = self._normalize_boundaries(boundaries)
-        if boundaries is None:
-            return None
+        if boundaries is None: return None
 
         # Возвращаем объединённый список (база + границы)
         return base + boundaries
@@ -235,8 +209,8 @@ class Simplex(Monoid):
         sign = getattr(self, 'sign', 1)   # запасной вариант
 
         normalized = self._full_normalize(self.components)
-        if normalized is None:
-            return Simplex.zero()
+        if normalized is None or normalized == []: return self.zero()
+
         temp = Simplex(normalized, sign=sign)
         # Сортировка компонент по строковому представлению
         indexed = list(enumerate(temp.components))
@@ -253,8 +227,7 @@ class Simplex(Monoid):
         n = len(perm)
         for i in range(n):
             for j in range(i+1, n):
-                if perm[i] > perm[j]:
-                    sign = -sign
+                if perm[i] > perm[j]: sign = -sign
         return sign
 
     def __eq__(self, other):
@@ -273,11 +246,8 @@ class Simplex(Monoid):
 
     def __mul__(self, other):
         result = super().__mul__(other)
-        if result is not NotImplemented:
-            return result
+        if result is not NotImplemented: return result
         if isinstance(other, Simplex):
-            if set(self.components) & set(other.components):
-                return self.zero()
             new_components = list(self.components) + list(other.components)
             new_sign = self.sign * other.sign
             return Simplex(new_components, new_sign).canonical()
