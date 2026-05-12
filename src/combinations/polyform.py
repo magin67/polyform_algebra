@@ -5,9 +5,13 @@ import numpy as np
 
 from .polysimplex import Polysimplex
 from objects.quform import quForm
-from objects.element import Point, Vector   # новый класс вектора
+from objects.element import Element, Point, Vector   # новый класс вектора
 
-class PolyForm(Polysimplex):
+class Polyform(Polysimplex):
+    @classmethod
+    def zero(cls):
+        return cls()
+    
     @classmethod
     def one(cls):
         return cls({quForm.one(): 1})
@@ -50,52 +54,14 @@ class PolyForm(Polysimplex):
         return cls(terms)
 
     @classmethod
-    def from_components(cls, components):
-        result = cls.one()
-        for comp in components:
-            if isinstance(comp, Vector):
-                # Преобразуем вектор в quForm: для вектора v = b - a -> quForm([(a,b)])?
-                # Старое: AffineVector.to_polyform() возвращал Polyform с термом quForm.
-                # Реализуем через представление вектора:
-                # Если у вектора есть frame (линейная комбинация) 
-                # и он имеет multiplicity=0, то frame — это b - a.
-                # Но для упрощения пока считаем, что вектор уже есть как элемент.
-                # Временно: vector -> quForm([tuple(вектор?)]) - неверно.
-                # Пропустим, пока не определимся.
-                raise NotImplementedError("Conversion from Vector to PolyForm not implemented")
-            elif isinstance(comp, quForm):
-                result = result * cls({comp: 1})
-            else:
-                raise TypeError(f"Unsupported component type: {type(comp)}")
-        return result
+    def from_pairs(cls, pairs): # pairs: список пар (key, coeff), где key может быть списком или кортежем
+        new_data = {}
+        for key, value in pairs:
+            new_data[quForm(key)] = value
+        return cls(new_data)
 
     def __init__(self, data=None):
-        if data is None:
-            super().__init__(term_type=quForm)
-            return
-        prepared = {}
-        if isinstance(data, dict):
-            items = data.items()
-        elif isinstance(data, (list, tuple)):
-            items = data
-        elif isinstance(data, quForm):
-            items = [(data, 1)]
-        elif isinstance(data, Polysimplex):
-            # Если передан Polysimplex, преобразуем его термы (Simplex) в quForm
-            for term, coeff in data.terms.items():
-                qterm = quForm(term)
-                self.add_term(prepared, qterm, coeff)
-            super().__init__(prepared, term_type=quForm)
-            return
-        else:
-            raise TypeError(f"Unsupported type: {type(data)}")
-        for term, coeff in items:
-            if coeff == 0:
-                continue
-            if not isinstance(term, quForm):
-                term = quForm(term)
-            self.add_term(prepared, term, coeff)
-        super().__init__(prepared, term_type=quForm)
+        super().__init__(data, term_type=quForm)
 
     @staticmethod
     def add_term(prepared, term, coeff):
@@ -104,11 +70,11 @@ class PolyForm(Polysimplex):
         prepared[key] = prepared.get(key, 0) + coeff * cterm.sign
 
     def __str__(self):
-        if self.is_zero():
-            return "0"
+        if self.is_zero(): return "<>"
+        if self.is_one(): return "<1>"
         parts = []
         for term, coeff in self.terms.items():
-            term_str = str(term)   # quForm выводит f[...]
+            term_str = str(term)  # quForm выводит с префиксом f
             if coeff == 1:
                 parts.append(term_str)
             elif coeff == -1:
@@ -124,34 +90,45 @@ class PolyForm(Polysimplex):
         return result
 
     def __repr__(self):
-        return f"PolyForm({self.__str__()})"
+        return f"Polyform({self.__str__()})"
 
-    # --- Методы, специфичные для квадратичных форм ---
-    def potential(self, obj_poly):
-        if self.is_zero():
-            return 0
+    def is_equivalent(self, other, tolerance=1e-10):
+        # Проверяет эквивалентность двух полиформ с точностью до нулевых комбинаций
+        if not isinstance(other, Polyform): return False
+        diff = self - other
+        # Если diff уже нулевая, то эквивалентны
+        if diff.is_zero(): return True
+        # Получаем все вершины из разности
+        vertices = sorted(diff.get_elements(kind='points'), key=str)
+        # Генерируем все базисные векторы a_i - a_j
+        for i in range(len(vertices)):
+            for j in range(i+1, len(vertices)):
+                plf = quForm([(vertices[i], vertices[j])])
+                prod = diff * plf
+                if not prod.is_zero(): return False
+        return True
+
+    # --- Методы метрики ---
+    def potential(self, obj_polyform):
+        # obj_polyform - quForm or Polyform
+        if self.is_zero(): return 0
         g_metric = self.grade()
-        g_obj = obj_poly.grade()
+        g_obj = obj_polyform.grade()
         if self.is_homogeneous():
             metric_part = self
         else:
-            if g_obj < 0 or g_metric < g_obj:
-                return 0
+            if g_obj < 0 or g_metric < g_obj: return 0
             metric_part = self.extract_grade(g_metric - g_obj)
-        if metric_part.is_zero():
-            return 0
-        prod = metric_part * obj_poly
-        if prod.is_zero():
-            return 0
+        if metric_part.is_zero(): return 0
+        prod = metric_part * obj_polyform
+        if prod.is_zero(): return 0
         lead = prod.leading_coefficient()
-        if isinstance(lead, list):
-            return sum(lead)
+        if isinstance(lead, list): return sum(lead)
         return lead
 
     def norm(self, obj_poly):
-        if self.is_zero():
-            raise ValueError("Cannot compute norm with zero metric")
         pot = self.potential(obj_poly)
+        if pot == 0: return 0
         metric_lead = self.leading_coefficient()
         if isinstance(metric_lead, list):
             metric_lead = sum(metric_lead)
@@ -159,28 +136,71 @@ class PolyForm(Polysimplex):
             raise ValueError("Metric leading coefficient is zero")
         return pot / metric_lead
 
-    def is_equivalent(self, other, tolerance=1e-10):
-        if not isinstance(other, PolyForm):
-            return False
-        diff = self - other
-        if diff.is_zero(tolerance):
-            return True
-        vertices = sorted(diff.get_elements(), key=str)
-        # Генерируем базисные векторы a_i - a_j как новые векторы
-        for i in range(len(vertices)):
-            for j in range(i+1, len(vertices)):
-                # Создаём вектор v = b - a (как линейную комбинацию)
-                # Представление вектора: b - a — это quForm([(a,b)])? Нет, вектор — это элемент, а не форма.
-                # Для проверки эквивалентности нужно умножить diff на вектор (как quForm?).
-                # В старом коде использовался AffineVector.to_polyform() -> Polyform с термом quForm.
-                # Создадим quForm из разности двух базисных точек.
-                # Но проще: создать симплекс [(a,b)] и взять его границу? Нет.
-                # Временно: предполагаем, что вектор задаётся как quForm([(a,b)]), что соответствует (b-a).
-                q = quForm([(vertices[i], vertices[j])])  # это b - a? Да, quForm([(a,b)]) соответствует b-a.
-                prod = diff * PolyForm({q: 1})
-                if not prod.is_zero(tolerance):
-                    return False
-        return True
+    @staticmethod
+    def scalar_product(frame1, frame2, tolerance=1e-10):
+        # Проверка, что фреймы состоят только из точек
+        for frame in (frame1, frame2):
+            if frame.get_elements('all') != frame.get_elements('points'):
+                raise ValueError("Фрейм содержит векторы или границы")
+
+        mult1 = frame1.multiplicity()
+        mult2 = frame2.multiplicity()
+
+        points = sorted(frame1.get_elements('points') | frame2.get_elements('points'), key=str)
+
+        def get_coeffs(frame):
+            coeffs = {pt: 0.0 for pt in points}
+            for term, coeff in frame.terms.items():
+                if len(term.components) == 1 and not isinstance(term.components[0], tuple):
+                    pt = term.components[0]
+                    coeffs[pt] += coeff
+            return coeffs
+
+        coeff1 = get_coeffs(frame1)
+        coeff2 = get_coeffs(frame2)
+
+        terms_counter = Counter()
+
+        # Векторная часть (всегда)
+        for i in range(len(points)):
+            for j in range(i+1, len(points)):
+                pi, pj = points[i], points[j]
+                vi = coeff1.get(pi, 0)
+                vj = coeff1.get(pj, 0)
+                wi = coeff2.get(pi, 0)
+                wj = coeff2.get(pj, 0)
+                coeff = - (vi * wj + vj * wi) / 2
+                coeff = Polyform._round_value(coeff, tolerance)
+                if abs(coeff) > tolerance:
+                    form = quForm([(pi, pj)])
+                    terms_counter[form] += coeff
+
+        # Точечная часть
+        if abs(mult1) > tolerance or abs(mult2) > tolerance:
+            # Вычисляем f1 и f2 как линейные комбинации quForm([point])
+            def point_part(coeffs, mult):
+                part = Counter()
+                for pt, c in coeffs.items():
+                    if abs(c) > tolerance:
+                        form = quForm([pt])
+                        part[form] += c * mult
+                return part
+            f1 = point_part(coeff1, mult2)
+            f2 = point_part(coeff2, mult1)
+            total_point = Counter()
+            for form, c in f1.items():
+                total_point[form] += c
+            for form, c in f2.items():
+                total_point[form] += c
+            for form, c in total_point.items():
+                coeff = Polyform._round_value(c / 2, tolerance)
+                if abs(coeff) > tolerance:
+                    terms_counter[form] += coeff
+
+        return Polyform(terms_counter)
+
+
+    # --- Диагонализация - приведение к базису из собственных векторов ---
 
     def to_laplacian(self):
         if not self.is_homogeneous() or self.grade() != 1:
@@ -209,41 +229,80 @@ class PolyForm(Polysimplex):
                 raise ValueError("Неподдерживаемый формат формы для лапласиана")
         return L, idx
 
-    # def eigenvectors(self, normalized=False, tolerance=1e-10):
-    #     if not self.is_homogeneous() or self.grade() != 1:
-    #         raise ValueError("Полиформа должна быть однородной 1-го порядка")
-    #     L, idx = self.to_laplacian()
-    #     eig_vals, eig_vecs = np.linalg.eigh(L)
-    #     eig_vals, eig_vecs = np.real(eig_vals), np.real(eig_vecs)
-    #     result = []
-    #     for i in range(len(eig_vals)):
-    #         ev = eig_vals[i]
-    #         if abs(ev) < tolerance:
-    #             continue
-    #         vec = eig_vecs[:, i]
-    #         if not normalized:
-    #             vec = vec * np.sqrt(ev)
-    #         # Собираем аффинный вектор как линейную комбинацию точек (коэффициенты при вершинах)
-    #         coeffs = {}
-    #         for vertex, j in idx.items():
-    #             val = self._round_value(vec[j], tolerance)
-    #             if val != 0.0:
-    #                 coeffs[vertex] = val
-    #         # Создаём новый Vector (с multiplicity=0)
-    #         # Вектор задаётся как линейная комбинация точек, например, sum coeff * Point(vertex)
-    #         # Но нам нужен объект Vector, который можно хранить в представлении.
-    #         # Можно создать Vector без явного имени, передав ему PolySimplex?
-    #         # Вектор — это элемент с multiplicity=0, и его frame может быть суммой точек с коэффициентами.
-    #         # Создадим просто экземпляр Vector, передав ему rep = PolySimplex({...}).
-    #         # Пока упростим: создадим Vector с именем, но без frame.
-    #         avec = Vector(name=f"eigenvec_{i}", multiplicity=0)
-    #         # Установим frame для вектора как линейную комбинацию.
-    #         # frame — это Polysimplex, где термы — singletons (точки).
-    #         polysimp = Polysimplex()
-    #         for vertex, val in coeffs.items():
-    #             # создаём симплекс из одной точки
-    #             p = Simplex([vertex], sign=1)
-    #             polysimp += Polysimplex({p: val})
-    #         avec.add_representation(polysimp)
-    #         result.append((ev, avec))
-    #     return result
+    def to_eigenbasis(self, tolerance=1e-10):
+        """
+        Преобразует граничную однородную полиформу 1-го порядка в диагональную форму
+        в базисе собственных векторов лапласиана.
+        Возвращает Polyform: Σ λ_i * quForm([v_i]), где v_i — собственный вектор (как объект Vector),
+        λ_i — собственное число.
+        """
+        # from objects.quform import quForm
+        # from objects.element import Vector
+        # from .polysimplex import Polysimplex
+
+        # Проверки
+        if not self.is_homogeneous() or self.grade() != 1:
+            raise ValueError("Полиформа должна быть однородной и иметь грейд 1")
+        if self.kind() != 'boundary':
+            raise ValueError("Метод to_eigenbasis применим только к граничным полиформам")
+
+        # Получаем лапласиан и отображение точка -> индекс
+        L, idx = self.to_laplacian()  # idx: {point: index}
+        if L.size == 0: return Polyform.zero()
+
+        # Вычисляем собственные значения и векторы (уже нормированные и отсортированные)
+        eig_vals, eig_vecs = np.linalg.eigh(L)
+
+        # Создаём словарь для новой полиформы
+        new_terms = {}
+        for k in range(len(eig_vals)):
+            ev = eig_vals[k]
+            if abs(ev) < tolerance: continue
+            vec = eig_vecs[:, k]
+
+            # Строим фрейм (Polysimplex) для собственного вектора как линейной комбинации точек
+            frame_terms = {}
+            for point, i in idx.items():
+                coeff = vec[i]
+                if abs(coeff) < tolerance: continue
+                frame_terms[point] = coeff   # point — уже симплекс
+            # Создаём полисимплекс (фрейм)
+            frame = Polysimplex(frame_terms)
+
+            # Создаём вектор с этим фреймом (кратность 0)
+            v = Vector(name='v' + str(k), frame=frame)
+
+            # Форма quForm от вектора (quForm([v]))
+            qform = quForm([v])
+            new_terms[qform] = new_terms.get(qform, 0.0) + ev
+
+        # Округляем коэффициенты и убираем нулевые
+        cleaned = {}
+        for form, coeff in new_terms.items():
+            coeff = self._round_value(coeff, tolerance)
+            if coeff != 0: cleaned[form] = coeff
+
+        return Polyform(cleaned)
+
+    def expand(self, index=0):
+        if not self.is_homogeneous() or self.grade() != 1:
+            raise ValueError("Expand применим только к однородным полиформам 1-го порядка")
+        result = Polyform.zero()
+        for term, coeff in self.terms.items():
+            # term — quForm([el])
+            el = term.components[0]   # это Element
+            if not isinstance(el, Element):
+                raise ValueError("Терм должен содержать элемент'")
+            frame = el[index]   # Polysimplex
+            bilinear = Polyform.scalar_product(frame, frame)  # получаем полиформу нормы элемента
+            result += bilinear * coeff
+        return result
+
+    def exp(self, tolerance=1e-10):
+        # Для полиформ: экспонента = Product (1 + term) для всех термов
+        result = Polyform.one()
+        for term, coeff in self.terms.items():
+            # term — quForm, coeff — коэффициент
+            factor = Polyform({quForm.one(): 1, term: coeff})
+            result = result * factor
+        return result

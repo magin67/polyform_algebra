@@ -187,9 +187,6 @@ class LinearCombination(ABC):
             elements.update(term.get_elements())
         return elements
 
-    def get_vertices(self, tolerance=1e-10): # для обратной совместимости
-        return self.get_elements(tolerance=tolerance)
-
     def extract_grade(self, grade): # Возвращает новую линейную комбинацию того же типа, содержащую только слагаемые данного грейда.
         new_terms = {t: c for t, c in self.terms.items() if t.grade() == grade}
         return self.__class__(new_terms)
@@ -285,17 +282,15 @@ class LinearCombination(ABC):
         return result
 
     def exp(self, max_terms=None):
-        self._skip_basis_update = True
-        result = self.one()
+        result = self.zero()
         term = self.one()
         k = 0
         while True:
             term = term * self
+            if term.is_zero(): break
             k += 1
             term = term * (1/k)
-            if term.is_zero(): break
             result = result + term
             if max_terms is not None and k >= max_terms: break
-        self._skip_basis_update = False
         return result
 

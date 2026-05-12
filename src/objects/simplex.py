@@ -2,8 +2,6 @@
 
 from _core.monoid import Monoid
 
-from _core.monoid import Monoid
-
 class Simplex(Monoid):
     @classmethod
     def zero(cls):
@@ -23,24 +21,41 @@ class Simplex(Monoid):
         need_normalize = False
         if len(elements) > 1:
             need_normalize = True
+
+        # elif len(elements) == 1:
+        #     comp = elements[0]
+        #     if isinstance(comp, tuple):
+        #         if len(comp) > 1:
+        #             need_normalize = True
+        #         else:
+        #             # Кортеж длины 1: либо точка, либо вектор
+        #             elem = comp[0]
+        #             if hasattr(elem, 'multiplicity') and elem.multiplicity == 0:
+        #                 # Вектор: выносим из кортежа
+        #                 elements = [elem]
+        #             else:
+        #                 # Точка: кортеж эквивалентен единице, просто игнорируем его
+        #                 elements = []   # пустой симплекс = единица?
+        #                 # Но единица — это особый объект, лучше сделать Simplex.one()
+        #                 # Пока для простоты оставим как есть, но потом нужно будет вернуть one.
+        #                 # Временно: если все элементы удалены, создаём единичный симплекс.
+        #                 # Однако в контексте создания Point из [self] мы сюда не попадём, так как self не кортеж.
+
         elif len(elements) == 1:
             comp = elements[0]
             if isinstance(comp, tuple):
                 if len(comp) > 1:
                     need_normalize = True
-                else:
-                    # Кортеж длины 1: либо точка, либо вектор
+                elif len(comp) == 1:
                     elem = comp[0]
                     if hasattr(elem, 'multiplicity') and elem.multiplicity == 0:
-                        # Вектор: выносим из кортежа
-                        elements = [elem]
+                        elements = [elem]   # вектор выносим
                     else:
-                        # Точка: кортеж эквивалентен единице, просто игнорируем его
-                        elements = []   # пустой симплекс = единица?
-                        # Но единица — это особый объект, лучше сделать Simplex.one()
-                        # Пока для простоты оставим как есть, но потом нужно будет вернуть one.
-                        # Временно: если все элементы удалены, создаём единичный симплекс.
-                        # Однако в контексте создания Point из [self] мы сюда не попадём, так как self не кортеж.
+                        elements = []       # точка -> единица
+                else:  # len(comp) == 0
+                    # пустой кортеж эквивалентен единице
+                    elements = []
+
         if need_normalize:
             normalized = self._full_normalize(elements)
             if normalized is None:
