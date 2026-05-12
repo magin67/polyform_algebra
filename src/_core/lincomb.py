@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 import sympy as sp
 
-from .monoid import Monoid
+from src._core.monoid import Monoid
 
 class LinearCombination(ABC):
     @staticmethod
@@ -50,7 +50,9 @@ class LinearCombination(ABC):
 
     def is_one(self): return len(self.terms) == 1 and list(self.terms.values())[0] == 1 and list(self.terms.keys())[0].is_one()
 
-    def is_zero(self, tolerance=1e-10):
+    def is_zero(self): return len(self.terms) == 0
+
+    def is_zero_with_tolerance(self, tolerance=1e-10):
         if not self.terms: return True
         for coeff in self.terms.values():
             if abs(coeff) > tolerance: return False
@@ -84,7 +86,6 @@ class LinearCombination(ABC):
     def grade(self): return self.max_grade()   # для совместимости со старым кодом
 
     def is_homogeneous(self): return self._kind == 'homogeneous'
-    def is_zero(self): return len(self.terms) == 0
 
     def sizes(self): # Список размеров по грейдам от 0 до max_grade.
         if self.is_zero(): return []

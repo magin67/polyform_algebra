@@ -1,10 +1,11 @@
 
-from objects.simplex import Simplex
-from combinations.polysimplex import Polysimplex
+from src.objects.simplex import Simplex
+from src.combinations.polysimplex import Polysimplex
 
 '''Элементы - точки, векторы и другие объекты 1-го грейда'''
 class Element(Simplex):
     def __init__(self, name=None, frame=None, multiplicity=1, data=None):
+        super().__init__([self], multiplicity=multiplicity)
         self.name = name
         self.user_data = data
 
@@ -25,7 +26,6 @@ class Element(Simplex):
                 self.frames.extend(frame)
             else:
                 raise TypeError("frame must be PolySimplex or list thereof")
-        super().__init__([self], multiplicity=multiplicity)
 
     @staticmethod
     def _validate_frame(poly, expected_multiplicity):
@@ -52,8 +52,8 @@ class Element(Simplex):
     # Безопасные хеш и равенство, чтобы избежать рекурсии через Simplex
     def __hash__(self):
         if self.name:
-            return hash((self.__class__.__name__, self.name)) #, self.multiplicity
-        return hash((self.__class__.__name__, id(self))) #, self.multiplicity
+            return hash((self.__class__.__name__, self.name, self.multiplicity)) #, self.multiplicity
+        return hash((self.__class__.__name__, id(self), self.multiplicity)) #, self.multiplicity
 
     def __eq__(self, other):
         if not isinstance(other, Element): return False

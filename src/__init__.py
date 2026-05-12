@@ -1,10 +1,12 @@
 # src/__init__.py
 
-# from .monoid import Monoid
-# from .lincomb import LinearCombination
-# from .basis import Basis
-# from .simplex import Simplex
-# from .polysimplex import PolySimplex
+from ._core.monoid import Monoid
+from ._core.lincomb import LinearCombination
+from ._core.basis import Basis
 
-# from .quform import quForm
-# from .polyform import Polyform
+from .objects.element import Point, Vector, Element
+from .objects.simplex import Simplex
+from .objects.quform import quForm
+
+from .combinations.polysimplex import Polysimplex
+from .combinations.polyform import Polyform

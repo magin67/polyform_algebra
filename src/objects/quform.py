@@ -1,6 +1,6 @@
 # @title Форма – это квадратичный симплекс
 
-from .simplex import Simplex
+from src.objects.simplex import Simplex
 
 class quForm(Simplex):
     """Квадратичная форма от симплекса (знак всегда положительный)."""
@@ -25,9 +25,7 @@ class quForm(Simplex):
     
     @classmethod
     def one(cls):
-        obj = Simplex.one()
-        obj.__class__ = cls
-        return obj
+        return cls([], sign=1, multiplicity=-2)
     
     @classmethod
     def zero(cls): # создаём нулевой симплекс с multiplicity=-1

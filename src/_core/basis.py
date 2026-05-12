@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from objects.simplex import Simplex
+from src.objects.simplex import Simplex
 
 class Basis:
     def __init__(self, elements, is_orthonormal=False):
@@ -63,8 +63,8 @@ class Basis:
     def index(self, elem):
         return self._index.get(elem, -1)
 
-    def link_to(self, other_basis, tolerance=1e-10): # Связывание базисов
-        from combinations.polysimplex import Polysimplex
+    def link_to(self, other_basis, frame_ind=0, tolerance=1e-10): # Связывание базисов
+        from src.combinations.polysimplex import Polysimplex
         n = len(self)
         m = len(other_basis)
         if n != m:
@@ -73,7 +73,11 @@ class Basis:
         # Строим матрицу перехода из self в other, используя существующие представления
         M = np.zeros((n, n))
         for i, elem in enumerate(self.elements):
-            frame = elem[0]   # представление в other_basis (должно существовать)
+            try:
+                frame = elem[frame_ind]   # представление в other_basis (должно существовать)
+            except IndexError:
+                raise ValueError(f"Элемент {elem} не имеет фрейма с индексом {frame_ind}")
+          
             coeffs = np.zeros(n)
             for term, coeff in frame.terms.items():
                 if len(term.components) != 1 or isinstance(term.components[0], tuple):

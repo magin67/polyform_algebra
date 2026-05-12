@@ -1,10 +1,15 @@
 import pytest
+import sys
+import os
 
-from objects.element import Point, Vector
-from objects.simplex import Simplex
-from combinations.polysimplex import Polysimplex
-from objects.quform import quForm
-from combinations.polyform import Polyform
+# Добавляем корень проекта в путь
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.objects.element import Point, Vector
+from src.objects.simplex import Simplex
+from src.combinations.polysimplex import Polysimplex
+from src.objects.quform import quForm
+from src.combinations.polyform import Polyform
 
 # ---------- Точки ----------
 a, b, c, d, e, f, g, h, r, x, y, z = Point.create_list(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'r', 'x', 'y', 'z'])

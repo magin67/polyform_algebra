@@ -1,8 +1,13 @@
 import pytest
+import sys
+import os
 
-from objects.element import Point
-from objects.simplex import Simplex
-from combinations.polysimplex import Polysimplex
+# Добавляем корень проекта в путь
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.objects.element import Point
+from src.objects.simplex import Simplex
+from src.combinations.polysimplex import Polysimplex
 
 # ---------- Точки ----------
 a, b, c, d, e, f, g, h, r, x, y, z = Point.create_list(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'r', 'x', 'y', 'z'])

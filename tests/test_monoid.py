@@ -2,7 +2,7 @@ import pytest
 import sys
 import os
 
-# Добавляем корневую папку проекта в путь (если не установлен пакет)
+# Добавляем корень проекта в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src._core.monoid import Monoid

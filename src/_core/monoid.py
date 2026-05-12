@@ -59,9 +59,6 @@ class Monoid(ABC):
 
     def __mul__(self, other):
         if not isinstance(other, Monoid): return NotImplemented
-        if other == 0: return self.zero()
-        if other == 1: return self
-        if not isinstance(other, Monoid): return NotImplemented
         if self.is_zero() or other.is_zero(): return self.zero()
         if self.is_one(): return other
         if other.is_one(): return self
