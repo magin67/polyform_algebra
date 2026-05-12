@@ -135,6 +135,22 @@ class Polysimplex(LinearCombination):
                     add_if_matches(comp)
         return elements
 
+    def terms_lists(self, as_atomic=True):
+        """
+        Возвращает (список_термов, список_коэффициентов).
+        Если as_atomic=True и терм является симплексом из одного атома (не кортежа),
+        то вместо симплекса возвращается сам атом (точка или вектор).
+        """
+        terms = []
+        coeffs = []
+        for term, coeff in self.terms.items():
+            if as_atomic and len(term.components) == 1 and not isinstance(term.components[0], tuple):
+                terms.append(term.components[0])
+            else:
+                terms.append(term)
+            coeffs.append(coeff)
+        return terms, coeffs
+
     def boundary(self): # Возвращает границу полисимплекса (применяет boundary к каждому симплексу).
         if self.is_zero(): return Polysimplex()
         result_terms = Counter()

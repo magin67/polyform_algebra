@@ -215,6 +215,14 @@ class LinearCombination(ABC):
         comb = self if grade is None else self.extract_grade(grade)
         return sum(comb.terms.values())
 
+    def terms_lists(self): # Кортеж (список_термов, список_коэффициентов)
+        terms = []
+        coeffs = []
+        for term, coeff in self.terms.items():
+            terms.append(term)
+            coeffs.append(coeff)
+        return terms, coeffs
+
     # Вспомогательные методы для форматирования (могут быть переопределены)
     def _format_coeff(self, coeff):
         if isinstance(coeff, float):

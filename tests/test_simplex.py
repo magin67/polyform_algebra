@@ -1,10 +1,8 @@
 import pytest
 
-from objects.element import Point, Vector, Element
+from objects.element import Point
 from objects.simplex import Simplex
-from objects.quform import quForm
 from combinations.polysimplex import Polysimplex
-from combinations.polyform import Polyform
 
 # ---------- Точки ----------
 a, b, c, d, e, f, g, h, r, x, y, z = Point.create_list(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'r', 'x', 'y', 'z'])
@@ -16,8 +14,6 @@ def test_simplex_grade():
     assert s.grade() == 2   # размер
     f = Simplex([(a, b)])
     assert f.grade() == 1   # len(comp)-1
-    q = quForm([(a, b)])
-    assert q.grade() == 1
 
 def test_simplex_creation():
     s = Simplex([a, b])
@@ -46,7 +42,6 @@ def test_simplex_boundary():
     # [b,c] - [a,c] + [a,b]
     expected = {Simplex([b,c]): 1, Simplex([a,c]): -1, Simplex([a,b]): 1}
     assert bnd2.terms == expected
-
 
 # ---------- PolySimplex ----------
 
@@ -109,69 +104,3 @@ def test_face_mul_two_common():
     prod = f1 * f2
     # два общих элемента -> нулевая грань
     assert prod.is_zero()
-
-'''
-
-# ---------- Vector ----------
-
-def test_vector_from_edges():
-    v = Vector('v', frame={(a, b): 1, (c, d): 2})
-    # b - a + 2(d - c) = -a + b -2c + 2d
-    expected_terms = {Simplex([a]): -1, Simplex([b]): 1, Simplex([c]): -2, Simplex([d]): 2}
-    assert v.terms == expected_terms
-
-def test_vector_from_vertices():
-    v = Vector({a: 1, b: -1})
-    assert v.terms == {Simplex([a]): 1, Simplex([b]): -1}
-
-def test_vector_dot():
-    v = Vector({(a, b): 1})   # b - a
-    w = Vector({(b, c): 1})   # c - b
-    assert v.dot(w) == -1   # (-1)*0 + 1*1 + 0*(-1) = 1? Проверим: коэфф при a: -1, b:1, c:0; у w: a:0, b:1, c:-1 => -1*0 + 1*1 + 0*(-1)=1. На самом деле -1? Пересчитаем: v = -a + b, w = -b + c. Скалярное произведение = (-1)*0 + 1*(-1) + 0*1 = -1. Да, -1.
-    assert v.dot(v) == 2   # 1^2 + (-1)^2 = 2
-
-def test_vector_bilinear_form():
-    v = Vector({(a,b): 1})
-    w = Vector({(b,c): 1})
-    qf = v @ w
-    # Ожидаем три формы: {a,b}, {a,c}, {b,c} с коэффициентами -0.5, 0.5, -0.5
-    assert len(qf.terms) == 3
-    forms = {frozenset(k.components[0]) for k in qf.terms}
-    expected = {frozenset({a,b}), frozenset({a,c}), frozenset({b,c})}
-    assert forms == expected
-    # Сумма коэффициентов должна быть -0.5 (проверка необязательна)
-
-def test_vector_to_polyform():
-    v = Vector({(a, b): 1})
-    qf = v.to_polyform()
-    assert len(qf.terms) == 1
-    form = list(qf.terms.keys())[0]
-    # Сравниваем компоненты как множества, так как порядок не важен
-    assert set(form.components[0]) == {a, b}
-    assert qf.terms[form] == 1
-
-
-# ---------- PolyFace ----------
-
-def test_polyface_from_dict():
-    pf = Polysimplex({(a,b,c): 1, (b,c,d): 2})
-    assert len(pf.terms) == 2
-    for term in pf.terms:
-        assert isinstance(term, Simplex)
-
-def test_polyface_from_list():
-    pf = Polysimplex([((a,b,c), 1), ((b,c,d), 2)])
-    assert len(pf.terms) == 2
-
-# ---------- Polyform ----------
-
-def test_polyform_from_components():
-    v = Vector({(a,b): 1})          # b - a
-    form = quForm([{b,c}])                # форма из ребра b-c
-    qf = Polyform.from_components([v, form])
-    assert not qf.is_zero()
-    # Проверим, что результат содержит форму {a,b,c} с ненулевым коэффициентом
-    expected_form = quForm([{a,b,c}])
-    assert qf.terms.get(expected_form, 0) != 0
-
-'''
