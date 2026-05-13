@@ -1,6 +1,6 @@
 # @title Симплекс – упорядоченный набор элементов. Каждый элемент списка уникален
 
-from _core.monoid import Monoid
+from .._core.monoid import Monoid
 
 class Simplex(Monoid):
     @classmethod
@@ -245,11 +245,11 @@ class Simplex(Monoid):
         return Simplex(self.components, sign=-self.sign)
 
     def as_polysimplex(self):
-        from combinations.polysimplex import Polysimplex
+        from ..combinations.polysimplex import Polysimplex
         return Polysimplex({self: 1})
 
     def __add__(self, other):
-        from combinations.polysimplex import Polysimplex
+        from ..combinations.polysimplex import Polysimplex
         if isinstance(other, Simplex):
             return self.as_polysimplex() + other.as_polysimplex()
         if isinstance(other, Polysimplex):
@@ -263,7 +263,7 @@ class Simplex(Monoid):
         return self.as_polysimplex().__neg__()
 
     def __mul__(self, other):
-        from combinations.polysimplex import Polysimplex
+        from ..combinations.polysimplex import Polysimplex
         if isinstance(other, (int, float)):
             return self.as_polysimplex() * other
         if isinstance(other, Simplex):
@@ -308,7 +308,7 @@ class Simplex(Monoid):
         return total
 
     def boundary(self):
-        from src.combinations.polysimplex import Polysimplex
+        from ..combinations.polysimplex import Polysimplex
         if self.is_zero():
             return Polysimplex()
         # Если есть компонента-кортеж (граница), возвращаем ноль
@@ -331,7 +331,7 @@ class Simplex(Monoid):
         return result
 
     def to_polysimplex(self):
-        from src.combinations.polysimplex import Polysimplex
+        from ..combinations.polysimplex import Polysimplex
         if self.is_zero():
             return Polysimplex()
         result = Polysimplex.one()

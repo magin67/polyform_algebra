@@ -1,6 +1,6 @@
 
-from objects.simplex import Simplex
-from combinations.polysimplex import Polysimplex
+from .simplex import Simplex
+from ..combinations.polysimplex import Polysimplex
 
 '''Элементы - точки, векторы и другие объекты 1-го грейда'''
 class Element(Simplex):

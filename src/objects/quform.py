@@ -1,6 +1,6 @@
 # @title Форма – это квадратичный симплекс
 
-from objects.simplex import Simplex
+from .simplex import Simplex
 
 class quForm(Simplex):
     """Квадратичная форма от симплекса (знак всегда положительный)."""
@@ -36,11 +36,11 @@ class quForm(Simplex):
         return len(self.components) == 0 and self.sign == 1
 
     def as_polyform(self):
-        from combinations.polyform import Polyform
+        from ..combinations.polyform import Polyform
         return Polyform({self: 1})
 
     def __add__(self, other):
-        from combinations.polyform import Polyform
+        from ..combinations.polyform import Polyform
         if isinstance(other, quForm):
             return self.as_polyform() + other.as_polyform()
         if isinstance(other, Polyform):
@@ -54,7 +54,7 @@ class quForm(Simplex):
         return self.as_polyform().__neg__()
 
     def __mul__(self, other):
-        from combinations.polyform import Polyform
+        from ..combinations.polyform import Polyform
         if isinstance(other, (int, float)):
             return self.as_polyform() * other
         if isinstance(other, quForm):
