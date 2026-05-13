@@ -3,9 +3,8 @@
 # from typing import Dict, Union, List, Set, Tuple, Any
 from abc import ABC, abstractmethod
 from collections import Counter
-import sympy as sp
 
-from _core.monoid import Monoid
+from .monoid import Monoid
 
 class LinearCombination(ABC):
     @staticmethod
@@ -144,7 +143,7 @@ class LinearCombination(ABC):
         return result
 
     def __mul__(self, other):
-        if isinstance(other, (int, float, sp.Expr)): return self.__rmul__(other)
+        if isinstance(other, (int, float)): return self.__rmul__(other)
         if isinstance(other, LinearCombination):
             if self.is_zero() or other.is_zero(): return self.zero()
             if self.is_one(): return other
@@ -159,7 +158,7 @@ class LinearCombination(ABC):
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(other)}")
 
     def __rmul__(self, scalar):
-        if isinstance(scalar, (int, float, sp.Expr)):
+        if isinstance(scalar, (int, float)):
             new = self.__class__()
             new.terms = Counter({k: v * scalar for k, v in self.terms.items()})
             new.term_type = self.term_type   # добавлено
@@ -169,7 +168,7 @@ class LinearCombination(ABC):
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(scalar)}")
 
     def __truediv__(self, scalar):
-        if isinstance(scalar, (int, float, sp.Expr)):
+        if isinstance(scalar, (int, float)):
             if scalar == 0:
                 raise ZeroDivisionError("Division by zero")
             # Используем умножение на обратное число
