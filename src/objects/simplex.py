@@ -253,6 +253,17 @@ class Simplex(Monoid):
             return Simplex(new_components, new_sign).canonical()
         return NotImplemented
 
+    def __repr__(self):
+        sign = "-" if self.sign == -1 else ""
+        return f"{sign}{list(self.components)}"
+
+    def __str__(self):
+        if self.is_zero(): return "[]"
+        if self.is_one(): return "[1]"
+        sign = "-" if self.sign == -1 else ""
+        inner = ", ".join(str(c) for c in self.components)
+        return f"{sign}[{inner}]"
+
     def grade(self):
         """Грейд симплекса: сумма грейдов компонент (атом → 1, кортеж → len-1)."""
         if self.is_zero(): return -1   # или None, но оставим -1
@@ -311,20 +322,27 @@ class Simplex(Monoid):
             result = result * poly
         # Коррекция знака: если число границ (кортежей) нечётное, умножаем на -1
         num_boundaries = sum(1 for comp in self.components if isinstance(comp, tuple))
-        if num_boundaries % 2 == 1:
-            result = -result
+        if num_boundaries % 2 == 1: result = -result
         return result
 
-    def __repr__(self):
-        sign = "-" if self.sign == -1 else ""
-        return f"{sign}{list(self.components)}"
-
-    def __str__(self):
-        if self.is_zero():
-            return "[]"
-        if self.is_one():
-            return "[1]"
-        sign = "-" if self.sign == -1 else ""
-        inner = ", ".join(str(c) for c in self.components)
-        return f"{sign}[{inner}]"
-
+    def to_polyform(self, index=0):
+        from src.combinations.polyform import Polyform
+        if self.kind() != 'atomic':
+            raise ValueError("Метод to_polyform применим только к атомным симплексам")
+        if self.is_one(): return Polyform.one()
+        if self.is_zero(): return Polyform.zero()
+        # Начинаем с единичной полиформы
+        result = Polyform.one()
+        for comp in self.components:
+            # Каждый компонент — элемент (Point, Vector)
+            # Получаем его представление (фрейм) по индексу
+            try:
+                frame = comp[index]   # Polysimplex
+            except (IndexError, AttributeError):
+                raise RuntimeError(f"Элемент {comp} не имеет представления с индексом {index}")
+            # Преобразуем полисимплекс в полиформу: frame @ frame
+            # Поскольку frame — это Polysimplex (линейная комбинация точек), его квадрат даёт полиформу
+            poly = frame @ frame   # используем __matmul__, который реализован в Polysimplex
+            # Умножаем на текущий результат
+            result = result * poly
+        return result
