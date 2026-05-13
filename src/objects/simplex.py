@@ -1,6 +1,6 @@
 # @title Симплекс – упорядоченный набор элементов. Каждый элемент списка уникален
 
-from src._core.monoid import Monoid
+from _core.monoid import Monoid
 
 class Simplex(Monoid):
     @classmethod

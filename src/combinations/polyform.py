@@ -3,9 +3,9 @@
 from collections import Counter
 import numpy as np
 
-from src.combinations.polysimplex import Polysimplex
-from src.objects.quform import quForm
-from src.objects.element import Element, Point   # новый класс вектора
+from combinations.polysimplex import Polysimplex
+from objects.quform import quForm
+from objects.element import Element, Point   # новый класс вектора
 
 class Polyform(Polysimplex):
     @classmethod
@@ -245,7 +245,7 @@ class Polyform(Polysimplex):
         # import numpy as np
         # from objects.element import Vector
         # from .polysimplex import Polysimplex
-        from combinations.basis import Basis
+        from _core.basis import Basis
 
         if not self.is_homogeneous() or self.grade() != 1:
             raise ValueError("Полиформа должна быть однородной и иметь грейд 1")

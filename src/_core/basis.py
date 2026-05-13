@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from src.objects.simplex import Simplex
+from objects.simplex import Simplex
 
 class Basis:
     def __init__(self, elements, is_orthonormal=False):
@@ -64,7 +64,7 @@ class Basis:
         return self._index.get(elem, -1)
 
     def link_to(self, other_basis, frame_ind=0, tolerance=1e-10): # Связывание базисов
-        from src.combinations.polysimplex import Polysimplex
+        from combinations.polysimplex import Polysimplex
         n = len(self)
         m = len(other_basis)
         if n != m:

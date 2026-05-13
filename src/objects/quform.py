@@ -1,6 +1,6 @@
 # @title Форма – это квадратичный симплекс
 
-from src.objects.simplex import Simplex
+from objects.simplex import Simplex
 
 class quForm(Simplex):
     """Квадратичная форма от симплекса (знак всегда положительный)."""
@@ -12,11 +12,9 @@ class quForm(Simplex):
           - кортежем (границей)
           - объектом Simplex
         """
-        if isinstance(data, Simplex):
-            # Берём компоненты из симплекса, игнорируем его знак
+        if isinstance(data, Simplex): # Берём компоненты из симплекса, игнорируем его знак
             super().__init__(data.components, sign=1, dual=data.dual, multiplicity=data.multiplicity)
-        elif isinstance(data, tuple):
-            # Один кортеж как граница
+        elif isinstance(data, tuple): # Один кортеж как граница
             super().__init__([data], sign=1, dual=dual, multiplicity=multiplicity)
         elif isinstance(data, list):
             super().__init__(data, sign=1, dual=dual, multiplicity=multiplicity)
@@ -36,6 +34,34 @@ class quForm(Simplex):
 
     def is_one(self):
         return len(self.components) == 0 and self.sign == 1
+
+
+    def as_polyform(self):
+        from combinations.polyform import Polyform
+        return Polyform({self: 1})
+
+    def __add__(self, other):
+        return self.as_polyform() + other
+
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        return self.as_polyform() - other
+
+    def __rsub__(self, other):
+        return other - self.as_polyform()
+
+    def __neg__(self):
+        return self.as_polyform().__neg__()
+
+    def __mul__(self, other):
+        if isinstance(other, quForm): # внешнее умножение
+            return super().__mul__(other)
+        return self.as_polyform() * other
+
+    def __rmul__(self, other):
+        return self.as_polyform() * other
 
     def __mul__(self, other):
         if not isinstance(other, quForm):
@@ -67,4 +93,4 @@ class quForm(Simplex):
         return f"f[{inner}]"    
 
     def __repr__(self):
-        return f"quForm({self.components})"
+        return self.__str__()

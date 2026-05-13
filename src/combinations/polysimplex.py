@@ -2,8 +2,8 @@
 
 from collections import Counter
 
-from src._core.lincomb import LinearCombination
-from src.objects.simplex import Simplex
+from _core.lincomb import LinearCombination
+from objects.simplex import Simplex
 
 class Polysimplex(LinearCombination):
     @classmethod

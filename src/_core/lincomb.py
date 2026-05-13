@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections import Counter
 import sympy as sp
 
-from src._core.monoid import Monoid
+from _core.monoid import Monoid
 
 class LinearCombination(ABC):
     @staticmethod
