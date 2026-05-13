@@ -93,10 +93,18 @@ class LinearCombination(ABC):
         return [len([t for t in self.terms if t.grade() == g]) for g in range(mg+1)]
 
     def __add__(self, other):
-        if not isinstance(other, LinearCombination):
+        # Если other — число, преобразуем его в комбинацию с единичным термом
+        if isinstance(other, (int, float)):
+            other = self.__class__({self.term_type.one(): other})
+        # Если other — одиночный терм, превращаем в комбинацию
+        elif isinstance(other, self.term_type):
+            other = self.__class__({other: 1})
+        # Если other — другой тип LinearCombination, но с другим term_type — ошибка
+        elif not isinstance(other, LinearCombination):
             raise TypeError(f"Cannot add {type(other)} to {self.__class__.__name__}")
-        if self.term_type != other.term_type:
+        elif self.term_type != other.term_type:
             raise TypeError("Cannot add combinations with different term types")
+        # Теперь other — LinearCombination
         new_terms = self.terms.copy()
         for term, coeff in other.terms.items():
             new_terms[term] = new_terms.get(term, 0) + coeff
@@ -107,8 +115,6 @@ class LinearCombination(ABC):
         return new
 
     def __radd__(self, other):
-        if isinstance(other, Monoid) and not isinstance(other, LinearCombination):
-            other = self.__class__({other: 1})
         return self + other
 
     def __sub__(self, other): return self + (-other)

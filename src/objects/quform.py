@@ -35,41 +35,38 @@ class quForm(Simplex):
     def is_one(self):
         return len(self.components) == 0 and self.sign == 1
 
-
     def as_polyform(self):
         from combinations.polyform import Polyform
         return Polyform({self: 1})
 
     def __add__(self, other):
-        return self.as_polyform() + other
-
-    def __radd__(self, other):
-        return self + other
+        from combinations.polyform import Polyform
+        if isinstance(other, quForm):
+            return self.as_polyform() + other.as_polyform()
+        if isinstance(other, Polyform):
+            return self.as_polyform() + other
+        return NotImplemented
 
     def __sub__(self, other):
-        return self.as_polyform() - other
-
-    def __rsub__(self, other):
-        return other - self.as_polyform()
+        return self + (-other)
 
     def __neg__(self):
         return self.as_polyform().__neg__()
 
     def __mul__(self, other):
-        if isinstance(other, quForm): # внешнее умножение
-            return super().__mul__(other)
-        return self.as_polyform() * other
+        from combinations.polyform import Polyform
+        if isinstance(other, (int, float)):
+            return self.as_polyform() * other
+        if isinstance(other, quForm):
+            result = super().__mul__(other)
+            if result.is_zero(): return quForm.zero()
+            return quForm(result)
+        if isinstance(other, Polyform):
+            return self.as_polyform() * other
+        return NotImplemented
 
     def __rmul__(self, other):
-        return self.as_polyform() * other
-
-    def __mul__(self, other):
-        if not isinstance(other, quForm):
-            return NotImplemented
-        result = super().__mul__(other)
-        if result.is_zero():
-            return quForm.zero()
-        return quForm(result)   # передаём симплекс, а не его components
+        return self * other
 
     def canonical(self):
         # Сортируем элементы внутри каждого кортежа

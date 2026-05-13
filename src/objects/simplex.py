@@ -244,14 +244,38 @@ class Simplex(Monoid):
     def __neg__(self):
         return Simplex(self.components, sign=-self.sign)
 
+    def as_polysimplex(self):
+        from combinations.polysimplex import Polysimplex
+        return Polysimplex({self: 1})
+
+    def __add__(self, other):
+        from combinations.polysimplex import Polysimplex
+        if isinstance(other, Simplex):
+            return self.as_polysimplex() + other.as_polysimplex()
+        if isinstance(other, Polysimplex):
+            return self.as_polysimplex() + other
+        return NotImplemented
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __neg__(self):
+        return self.as_polysimplex().__neg__()
+
     def __mul__(self, other):
-        result = super().__mul__(other)
-        if result is not NotImplemented: return result
+        from combinations.polysimplex import Polysimplex
+        if isinstance(other, (int, float)):
+            return self.as_polysimplex() * other
         if isinstance(other, Simplex):
             new_components = list(self.components) + list(other.components)
             new_sign = self.sign * other.sign
             return Simplex(new_components, new_sign).canonical()
+        if isinstance(other, Polysimplex):
+            return self.as_polysimplex() * other
         return NotImplemented
+
+    def __rmul__(self, other):
+        return self * other
 
     def __repr__(self):
         sign = "-" if self.sign == -1 else ""

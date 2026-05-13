@@ -31,7 +31,7 @@ f_bc_da = quForm([(b, c), (d, a)])
 # Полиформы
 print("Полиформы:")
 
-P1 = Polyform({f_ab: 2, f_bc: -1})
+# P1 = Polyform({f_ab: 2, f_bc: -1})
 P = Polyform(2*f_ab - f_bc)
 Q = Polyform(f_cd)
 
