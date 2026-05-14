@@ -74,33 +74,6 @@ class Simplex(Monoid):
     # Вспомогательные методы для нормализации
     # --------------------------------------------------------------------------
     @staticmethod
-    def _extract_vectors_from_components(components):
-        """
-        Возвращает новый список компонент, в котором из кортежей удалены векторы,
-        и отдельный список вынесенных векторов (которые добавляются в базу).
-        Правило: если в кортеже есть векторы, они выносятся в базу.
-        Знак: при выносе вектора знак кортежа меняется, если размер кортежа чётный?
-        Пока не реализуем строго, просто удаляем векторы.
-        """
-        new_comps = []
-        vectors = []
-        for comp in components:
-            if isinstance(comp, tuple):
-                # Разделяем кортеж на точки и векторы
-                points = [e for e in comp if not (hasattr(e, 'multiplicity') and e.multiplicity == 0)]
-                vecs = [e for e in comp if hasattr(e, 'multiplicity') and e.multiplicity == 0]
-                vectors.extend(vecs)
-                if points:
-                    new_comps.append(tuple(points))
-            else:
-                if hasattr(comp, 'multiplicity') and comp.multiplicity == 0:
-                    vectors.append(comp)
-                else:
-                    new_comps.append(comp)
-        # Добавляем вынесенные векторы в конец (порядок пока не важен)
-        return new_comps + vectors
-
-    @staticmethod
     def _normalize_base(base):
         seen = set()
         for e in base:
@@ -154,8 +127,7 @@ class Simplex(Monoid):
             changed = False
             for i, b in enumerate(boundaries_list):
                 common = [e for e in base_list if e in b]
-                if len(common) >= 2:
-                    return None
+                if len(common) >= 2: return None
                 if len(common) == 1:
                     elem = common[0]
                     # Не удаляем elem из base_list
@@ -172,11 +144,6 @@ class Simplex(Monoid):
         Полная нормализация списка компонент (смесь атомарных элементов и кортежей).
         Возвращает новый список компонент или None (если симплекс нулевой).
         """
-        # Шаг 0: предварительно выносим векторы из границ (упрощённо)
-        # Это нужно, чтобы в границах остались только точки (или вообще ничего)
-        # Пока просто разделим на базу и границы, не вынося векторы из границ.
-        # Но для корректности лучше сделать отдельный шаг.
-        # Однако для простоты оставим пока так.
         base = [c for c in components if not isinstance(c, tuple)]
         boundaries = [c for c in components if isinstance(c, tuple)]
 

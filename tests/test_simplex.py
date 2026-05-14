@@ -103,6 +103,12 @@ def test_face_mul_no_overlap():
     assert prod.components[0] == (a,b)
     assert prod.components[1] == (c,d)
 
+def test_face_mul_simp():
+    f1 = Simplex([a])
+    f2 = Simplex([(a, b)])
+    prod = f1 * f2
+    assert prod == Simplex([a, b])
+
 def test_face_mul_two_common():
     f1 = Simplex([(a, b, c)])
     f2 = Simplex([(a, b)])
