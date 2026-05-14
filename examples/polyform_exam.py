@@ -2,12 +2,12 @@ import sys, os
 # sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
 
-from src.objects.element import Point, Vector
-from src.objects.quform import quForm
+from objects.element import Point, Vector
+from objects.quform import quForm
 
-from src.combinations.polysimplex import Polysimplex
-from src.combinations.polyform import Polyform
-from combinations.basis import Basis
+from combinations.polysimplex import Polysimplex
+from combinations.polyform import Polyform
+from _core.basis import Basis
 
 import numpy as np
 import networkx as nx
@@ -31,7 +31,8 @@ f_bc_da = quForm([(b, c), (d, a)])
 # Полиформы
 print("Полиформы:")
 
-P = Polyform({f_ab: 2, f_bc: -1})
+# P1 = Polyform({f_ab: 2, f_bc: -1})
+P = Polyform(2*f_ab - f_bc)
 Q = Polyform(f_cd)
 
 print("P: ", P)           # 2*quForm([[a, b]]) + -1*quForm([[b, c]])

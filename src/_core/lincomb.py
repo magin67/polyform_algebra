@@ -3,9 +3,8 @@
 # from typing import Dict, Union, List, Set, Tuple, Any
 from abc import ABC, abstractmethod
 from collections import Counter
-import sympy as sp
 
-from src._core.monoid import Monoid
+from .monoid import Monoid
 
 class LinearCombination(ABC):
     @staticmethod
@@ -93,10 +92,18 @@ class LinearCombination(ABC):
         return [len([t for t in self.terms if t.grade() == g]) for g in range(mg+1)]
 
     def __add__(self, other):
-        if not isinstance(other, LinearCombination):
+        # Если other — число, преобразуем его в комбинацию с единичным термом
+        if isinstance(other, (int, float)):
+            other = self.__class__({self.term_type.one(): other})
+        # Если other — одиночный терм, превращаем в комбинацию
+        elif isinstance(other, self.term_type):
+            other = self.__class__({other: 1})
+        # Если other — другой тип LinearCombination, но с другим term_type — ошибка
+        elif not isinstance(other, LinearCombination):
             raise TypeError(f"Cannot add {type(other)} to {self.__class__.__name__}")
-        if self.term_type != other.term_type:
+        elif self.term_type != other.term_type:
             raise TypeError("Cannot add combinations with different term types")
+        # Теперь other — LinearCombination
         new_terms = self.terms.copy()
         for term, coeff in other.terms.items():
             new_terms[term] = new_terms.get(term, 0) + coeff
@@ -107,8 +114,6 @@ class LinearCombination(ABC):
         return new
 
     def __radd__(self, other):
-        if isinstance(other, Monoid) and not isinstance(other, LinearCombination):
-            other = self.__class__({other: 1})
         return self + other
 
     def __sub__(self, other): return self + (-other)
@@ -138,7 +143,7 @@ class LinearCombination(ABC):
         return result
 
     def __mul__(self, other):
-        if isinstance(other, (int, float, sp.Expr)): return self.__rmul__(other)
+        if isinstance(other, (int, float)): return self.__rmul__(other)
         if isinstance(other, LinearCombination):
             if self.is_zero() or other.is_zero(): return self.zero()
             if self.is_one(): return other
@@ -153,7 +158,7 @@ class LinearCombination(ABC):
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(other)}")
 
     def __rmul__(self, scalar):
-        if isinstance(scalar, (int, float, sp.Expr)):
+        if isinstance(scalar, (int, float)):
             new = self.__class__()
             new.terms = Counter({k: v * scalar for k, v in self.terms.items()})
             new.term_type = self.term_type   # добавлено
@@ -163,7 +168,7 @@ class LinearCombination(ABC):
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(scalar)}")
 
     def __truediv__(self, scalar):
-        if isinstance(scalar, (int, float, sp.Expr)):
+        if isinstance(scalar, (int, float)):
             if scalar == 0:
                 raise ZeroDivisionError("Division by zero")
             # Используем умножение на обратное число

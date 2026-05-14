@@ -2,8 +2,8 @@
 
 from collections import Counter
 
-from src._core.lincomb import LinearCombination
-from src.objects.simplex import Simplex
+from .._core.lincomb import LinearCombination
+from ..objects.simplex import Simplex
 
 class Polysimplex(LinearCombination):
     @classmethod
@@ -200,7 +200,7 @@ class Polysimplex(LinearCombination):
         return self.__class__(result_terms, term_type=self.term_type)
 
     def transform(self, from_basis, to_basis, tolerance=1e-10):
-        from _core.basis import Basis
+        from .._core.basis import Basis
         import numpy as np
         """
         Преобразует полисимплекс из базиса from_basis в базис to_basis.
@@ -239,7 +239,7 @@ class Polysimplex(LinearCombination):
         Для каждого терма Simplex([v]) с коэффициентом c добавляет слагаемое c^2 * quForm([v]).
         """
         from .polyform import Polyform
-        from objects.quform import quForm
+        from ..objects.quform import quForm
 
         if not basis.is_orthonormal:
             raise ValueError("Метод требует ортонормированного базиса")
