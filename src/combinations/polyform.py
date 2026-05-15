@@ -137,67 +137,49 @@ class Polyform(Polysimplex):
         return pot / metric_lead
 
     @staticmethod
-    def scalar_product(frame1, frame2, tolerance=1e-10):
-        # Проверка, что фреймы состоят только из точек
-        for frame in (frame1, frame2):
-            if frame.get_elements('all') != frame.get_elements('points'):
-                raise ValueError("Фрейм содержит векторы или границы")
+    def polar_form(p, q, tolerance=1e-10):
+        # p, q - фреймы (Polysimplex)
+        # Собираем базисные элементы
+        basis_elements = sorted(p.get_elements('all') | q.get_elements('all'), key=str)
+        
+        coeff_p = p.as_coefficient_dict(basis_elements)
+        coeff_q = q.as_coefficient_dict(basis_elements)
+        
+        sum_p = sum(coeff_p.values())
+        sum_q = sum(coeff_q.values())
+        
+        # Диагональная часть
+        diag_terms = {}
+        for elem in basis_elements:
+            c = sum_p * coeff_q[elem] + sum_q * coeff_p[elem]
+            if abs(c) > tolerance:
+                form = quForm([elem])
+                diag_terms[form] = diag_terms.get(form, 0.0) + c
+        
+        # Векторная часть
+        diff_terms = {}
+        n = len(basis_elements)
+        for i in range(n):
+            for j in range(i+1, n):
+                b_i = basis_elements[i]
+                b_j = basis_elements[j]
+                c = coeff_p[b_i] * coeff_q[b_j] + coeff_q[b_i] * coeff_p[b_j]
+                if abs(c) > tolerance:
+                    form = quForm([(b_i, b_j)])
+                    diff_terms[form] = diff_terms.get(form, 0.0) + c
+        
+        # Полярная форма = диагональная - разностная
+        terms = diag_terms.copy()
+        for form, c in diff_terms.items():
+            terms[form] = terms.get(form, 0.0) - c
+        
+        # Округление
+        cleaned = {form: Polyform._round_value(c, tolerance) for form, c in terms.items() if abs(c) > tolerance}
+        return Polyform(cleaned)
 
-        mult1 = frame1.multiplicity()
-        mult2 = frame2.multiplicity()
-
-        points = sorted(frame1.get_elements('points') | frame2.get_elements('points'), key=str)
-
-        def get_coeffs(frame):
-            coeffs = {pt: 0.0 for pt in points}
-            for term, coeff in frame.terms.items():
-                if len(term.components) == 1 and not isinstance(term.components[0], tuple):
-                    pt = term.components[0]
-                    coeffs[pt] += coeff
-            return coeffs
-
-        coeff1 = get_coeffs(frame1)
-        coeff2 = get_coeffs(frame2)
-
-        terms_counter = Counter()
-
-        # Векторная часть (всегда)
-        for i in range(len(points)):
-            for j in range(i+1, len(points)):
-                pi, pj = points[i], points[j]
-                vi = coeff1.get(pi, 0)
-                vj = coeff1.get(pj, 0)
-                wi = coeff2.get(pi, 0)
-                wj = coeff2.get(pj, 0)
-                coeff = - (vi * wj + vj * wi) / 2
-                coeff = Polyform._round_value(coeff, tolerance)
-                if abs(coeff) > tolerance:
-                    form = quForm([(pi, pj)])
-                    terms_counter[form] += coeff
-
-        # Точечная часть
-        if abs(mult1) > tolerance or abs(mult2) > tolerance:
-            # Вычисляем f1 и f2 как линейные комбинации quForm([point])
-            def point_part(coeffs, mult):
-                part = Counter()
-                for pt, c in coeffs.items():
-                    if abs(c) > tolerance:
-                        form = quForm([pt])
-                        part[form] += c * mult
-                return part
-            f1 = point_part(coeff1, mult2)
-            f2 = point_part(coeff2, mult1)
-            total_point = Counter()
-            for form, c in f1.items():
-                total_point[form] += c
-            for form, c in f2.items():
-                total_point[form] += c
-            for form, c in total_point.items():
-                coeff = Polyform._round_value(c / 2, tolerance)
-                if abs(coeff) > tolerance:
-                    terms_counter[form] += coeff
-
-        return Polyform(terms_counter)
+    @staticmethod
+    def scalar_product(p, q, tolerance=1e-10):
+        return Polyform.polar_form(p, q, tolerance) * 0.5
 
     def to_matrix(self):
         """
