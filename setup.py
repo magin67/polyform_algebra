@@ -4,5 +4,5 @@ setup(
     name='polyform_algebra',
     version='0.1',
     packages=find_packages(),
-    install_requires=['numpy', 'networkx'],
+    install_requires=['sympy', 'numpy', 'networkx'],
 )
