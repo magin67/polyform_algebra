@@ -10,8 +10,8 @@ requires-python = ">=3.8"
 dependencies = ["sympy", "numpy", "networkx"]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+# Using default package discovery (current directory)
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["."]
 addopts = "-q"
