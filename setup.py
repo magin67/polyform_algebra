@@ -5,5 +5,5 @@ setup(
     version='0.1',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
-    install_requires=['sympy', 'numpy', 'networkx'],
+    install_requires=['numpy', 'networkx'],
 )
