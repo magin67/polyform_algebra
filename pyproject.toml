@@ -3,8 +3,11 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "polyform"
+name = "polyform_algebra"
 version = "0.1.0"
+description = "Algebra for polyforms and simplices"
+requires-python = ">=3.8"
+dependencies = ["sympy", "numpy", "networkx"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
