@@ -317,7 +317,7 @@ class Simplex(Monoid):
         return result
 
     def to_polyform(self, index=0):
-        from src.combinations.polyform import Polyform
+        from ..combinations.polyform import Polyform
         if self.kind() != 'atomic':
             raise ValueError("Метод to_polyform применим только к атомным симплексам")
         if self.is_one(): return Polyform.one()

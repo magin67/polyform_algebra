@@ -1,12 +1,6 @@
-import sys, os
-# sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
-
-# from _core.lincomb import LinearCombination
-
-from src.objects.element import Point, Vector
-from src.objects.simplex import Simplex
-from src.combinations.polyform import Polyform
+from polyform_algebra.objects.element import Point, Vector
+from polyform_algebra.objects.simplex import Simplex
+from polyform_algebra.combinations.polyform import Polyform
 
 # a, b = Point('a'), Point('b')
 a, b, c = Point.create_list(['a', 'b', 'c'])

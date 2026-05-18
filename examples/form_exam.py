@@ -1,13 +1,9 @@
-import sys, os
-# sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src'))
+from polyform_algebra.objects.element import Point, Vector
+from polyform_algebra.objects.simplex import Simplex
+from polyform_algebra.objects.quform import quForm
 
-from objects.element import Point, Vector
-from objects.simplex import Simplex
-from objects.quform import quForm
-
-from combinations.polyform import Polysimplex
-from combinations.polyform import Polyform
+from polyform_algebra.combinations.polysimplex import Polysimplex
+from polyform_algebra.combinations.polyform import Polyform
 
 a, b, c, d = Point.create_list(['a', 'b', 'c', 'd'])
 

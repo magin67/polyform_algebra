@@ -2,10 +2,7 @@ import pytest
 import sys
 import os
 
-# Добавляем корень проекта в путь
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src._core.monoid import Monoid
+from polyform_algebra._core.monoid import Monoid
 # from abc import ABC
 
 class ConcreteMonoid(Monoid):

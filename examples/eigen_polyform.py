@@ -1,14 +1,9 @@
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 import networkx as nx
 import sympy as sp
 
-# from src import AffineVector, Polyform, PolyBForm
-
-from src.combinations.polyform import Polyform
-from src.combinations.poly_bf import PolyBForm
-from src.combinations.affine_vector import AffineVector
+from polyform_algebra.combinations.polyform import Polyform
+from polyform_algebra.combinations.poly_bf import PolyBForm
+from polyform_algebra.combinations.affine_vector import AffineVector
 
 # ---------- Переменные ----------
 a, b, c, d, e, f, g, h, r, x, y, z = sp.symbols('a b c d e f g h r x y z')
