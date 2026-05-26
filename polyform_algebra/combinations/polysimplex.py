@@ -101,8 +101,7 @@ class Polysimplex(LinearCombination):
         return result
 
     def __repr__(self):
-        if self.is_zero():
-            return "Polysimplex()"
+        if self.is_zero(): return "Polysimplex()"
         return f"Polysimplex({self.__str__()})"
 
     def __matmul__(self, other):

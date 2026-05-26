@@ -30,10 +30,10 @@ class quForm(Simplex):
         return cls([], multiplicity=-1)
 
     def is_zero(self):
-        return len(self.components) == 0 and self.sign == -1
+        return len(self.components) == 0 and self.multiplicity == -1
 
     def is_one(self):
-        return len(self.components) == 0 and self.sign == 1
+        return len(self.components) == 0 and self.multiplicity == -2
 
     def as_polyform(self):
         from ..combinations.polyform import Polyform
@@ -84,8 +84,8 @@ class quForm(Simplex):
         return quForm(sorted_components, sign=1)
     
     def __str__(self):
-        if self.is_zero(): return "<0>"
-        if self.is_one(): return "<1>"
+        if self.is_zero(): return "f[]"
+        if self.is_one(): return "f[1]"
         inner = ", ".join(str(c) for c in self.components)
         return f"f[{inner}]"    
 

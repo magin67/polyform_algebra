@@ -70,24 +70,8 @@ class Polyform(Polysimplex):
         prepared[key] = prepared.get(key, 0) + coeff * cterm.sign
 
     def __str__(self):
-        if self.is_zero(): return "<>"
-        if self.is_one(): return "<1>"
-        parts = []
-        for term, coeff in self.terms.items():
-            term_str = str(term)  # quForm выводит с префиксом f
-            if coeff == 1:
-                parts.append(term_str)
-            elif coeff == -1:
-                parts.append(f"-{term_str}")
-            else:
-                parts.append(f"{coeff}*{term_str}")
-        result = parts[0]
-        for part in parts[1:]:
-            if part[0] == '-':
-                result += f" - {part[1:]}"
-            else:
-                result += f" + {part}"
-        return result
+        from .._core.lincomb import LinearCombination
+        return LinearCombination.__str__(self)
 
     def __repr__(self):
         return f"Polyform({self.__str__()})"
@@ -105,7 +89,9 @@ class Polyform(Polysimplex):
             for j in range(i+1, len(vertices)):
                 plf = quForm([(vertices[i], vertices[j])])
                 prod = diff * plf
-                if not prod.is_zero(): return False
+                if not prod.is_zero():
+                    print("prod, diff, plf = ", prod, diff, plf)
+                    return False
         return True
 
     # --- Методы метрики ---

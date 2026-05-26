@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polyform_algebra"
-version = "0.1.0"
+version = "0.2.0"
 description = "Algebra for polyforms and simplices"
 requires-python = ">=3.8"
-dependencies = ["sympy", "numpy", "networkx"]
+dependencies = ["numpy", "networkx"]
 
 [tool.setuptools.packages.find]
 # Using default package discovery (current directory)

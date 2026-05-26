@@ -273,7 +273,7 @@ class LinearCombination(ABC):
             return self._format_terms_from_list(list(self.terms.items()), use_repr=False)
         lines = []
         for g, terms in groups.items():
-            line = f"Grade {g}: {self._format_terms_from_list(terms, use_repr=False)}"
+            line = f"g{g}: {self._format_terms_from_list(terms, use_repr=False)}"
             lines.append(line)
         return "\n".join(lines)
 

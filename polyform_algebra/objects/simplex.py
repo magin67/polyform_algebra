@@ -244,16 +244,15 @@ class Simplex(Monoid):
     def __rmul__(self, other):
         return self * other
 
-    def __repr__(self):
-        sign = "-" if self.sign == -1 else ""
-        return f"{sign}{list(self.components)}"
-
     def __str__(self):
         if self.is_zero(): return "[]"
         if self.is_one(): return "[1]"
         sign = "-" if self.sign == -1 else ""
         inner = ", ".join(str(c) for c in self.components)
         return f"{sign}[{inner}]"
+
+    def __repr__(self):
+        return self.__str__()
 
     def grade(self):
         """Грейд симплекса: сумма грейдов компонент (атом → 1, кортеж → len-1)."""

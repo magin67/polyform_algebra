@@ -11,8 +11,6 @@ import networkx as nx
 a, b, c, d = Point.create_list(['a', 'b', 'c', 'd'])
 
 # Формы
-# print("Формы:")
-
 f_ab = quForm([(a, b)])
 f_bc = quForm([(b, c)])
 f_ac = quForm([(a, c)])
@@ -31,13 +29,13 @@ print("Полиформы:")
 P = Polyform(2*f_ab - f_bc)
 Q = Polyform(f_cd)
 
-print("P: ", P)           # 2*quForm([[a, b]]) + -1*quForm([[b, c]])
-print("Q: ", Q)           # quForm([[c, d]])
-print("P*Q: ", P * Q)       # 2*quForm([[a, b, c, d]]) + -1*quForm([[b, c, d]])
-print("P*3: ", P * 3)       # 6*quForm([[a, b]]) + -3*quForm([[b, c]])
-print("P^2: ", P ** 2)      # (2*quForm([[a, b]]) + -1*quForm([[b, c]]))^2
+# print("P: ", P)           # 2*quForm([[a, b]]) + -1*quForm([[b, c]])
+# print("Q: ", Q)           # quForm([[c, d]])
+# print("P*Q: ", P * Q)       # 2*quForm([[a, b, c, d]]) + -1*quForm([[b, c, d]])
+# print("P*3: ", P * 3)       # 6*quForm([[a, b]]) + -3*quForm([[b, c]])
+# print("P^2: ", P ** 2)      # (2*quForm([[a, b]]) + -1*quForm([[b, c]]))^2
 
-print("P*f_bc: ", P*f_bc)
+# print("P*f_bc: ", P*f_bc)
 
 # Эквивалентность. Проверяем тождество тетраэдра
 
@@ -55,52 +53,44 @@ L2 = Polyform.from_pairs([
 
 print("L1: ", L1)
 print("L2: ", L2)
+
+print("L1*ab: ", L1*f_ab)
+print("L2*ab: ", L2*f_ab)
+
+print("[(a, b, c)]*[(a, b)]: ", quForm([(a, b, c)])*quForm([(a, b)]))
+
 print("L1 == L2: ", L1.is_equivalent(L2))
+
+# Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
+# Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
+# Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
+
+# print("Path4.exp: ", Path4.exp())
 
 # print("P.laplacian: ", P.to_laplacian())
 
-Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
-Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
-Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
+# После последних изменений отвалилось умножение полиформ на форму. Самого кода умножения в классе полиформ нет, скорее всего используется код из линейных комбинаций. Он там такой:
+#     def __mul__(self, other):
+#         if isinstance(other, (int, float)): return self.__rmul__(other)
+#         if isinstance(other, LinearCombination):
+#             if self.is_zero() or other.is_zero(): return self.zero()
+#             if self.is_one(): return other
+#             if other.is_one(): return self
+#             if self.term_type != other.term_type:
+#                 raise TypeError("Cannot multiply combinations with different term types")
+#             return self._mul_terms(other)
+#         if isinstance(other, Monoid): # Проверка совместимости типа
+#             if self.term_type is not None and not isinstance(other, self.term_type):
+#                 raise TypeError(f"Cannot multiply {self.__class__.__name__} of {self.term_type} by {type(other)}")
+#             return self * self.__class__({other: 1})
+#         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(other)}")
 
-G_petersen = nx.petersen_graph()
-L_petersen = Polyform.from_networkx(G_petersen)
-
-PathEig, B_eigen = Path4.to_eigenbasis()
-print("Path.eigen: ", PathEig)
-print("Path.eigen.expand: ", PathEig.expand())
-
-points = list(Path4.get_elements())
-
-print("Basis of v: ", B_eigen)
-
-B_points = B_eigen.create_basis_from_frames(0)
-
-B_eigen.link_to(B_points)
-
-print("Basis of p[0]: ", B_points[0][1])
-
-v = Vector('v', frame = (d - a))
-f_v = v[0]@v[0]
-
-v.add_frame(frame=v.in_basis(0, B_points, B_eigen), basis=B_eigen)
-
-f_veig = v[1].to_quadratic_form(B_eigen)
-
-print("v = (d - a) in eig: ", v[1])
-print("<v>^2 in eig: ", f_veig)
-
-# Метрика:
-
-W = Path4# Cycle3
-Weig = PathEig # W.to_eigenbasis()
-
-Pmetric = W.exp()
-Peigmetric = Weig.exp()
-
-# print("W sizes: ", Pmetric.sizes())
-# print("Eig sizes: ", Peigmetric.sizes())
-
-print("f_v.norm: ", Pmetric.norm(f_v))
-print("f_veig.norm: ", Peigmetric.norm(f_veig))
-# print("PathEig.Exp: ", PathEig.exp())
+#     def __rmul__(self, scalar):
+#         if isinstance(scalar, (int, float)):
+#             new = self.__class__()
+#             new.terms = Counter({k: v * scalar for k, v in self.terms.items()})
+#             new.term_type = self.term_type   # добавлено
+#             new._finalize()
+#             new._update_cached_grades()
+#             return new
+#         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(scalar)}")
