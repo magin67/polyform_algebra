@@ -37,6 +37,10 @@ Q = Polyform(f_cd)
 
 # print("P*f_bc: ", P*f_bc)
 
+print("qu1*qu1: ", quForm.one()*quForm.one())
+
+print("Poly1*Poly1: ", Polyform.one() * Polyform.one())
+
 # Эквивалентность. Проверяем тождество тетраэдра
 
 L1 = Polyform.from_pairs([
@@ -51,21 +55,20 @@ L2 = Polyform.from_pairs([
     ([(a, d), (b, c)], 1)
 ])
 
-print("L1: ", L1)
-print("L2: ", L2)
+# print("L1: ", L1)
+# print("L2: ", L2)
+# print("L1*ab: ", L1*f_ab)
+# print("L2*ab: ", L2*f_ab)
+# print("[(a, b, c)]*[(a, b)]: ", quForm([(a, b, c)])*quForm([(a, b)]))
 
-print("L1*ab: ", L1*f_ab)
-print("L2*ab: ", L2*f_ab)
+# print("L1 == L2: ", L1.is_equivalent(L2))
 
-print("[(a, b, c)]*[(a, b)]: ", quForm([(a, b, c)])*quForm([(a, b)]))
+Path3 = Polyform({f_ab: 1, f_bc: 1})
+Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
+Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
+Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
 
-print("L1 == L2: ", L1.is_equivalent(L2))
-
-# Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
-# Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
-# Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
-
-# print("Path4.exp: ", Path4.exp())
+print("Path3.exp: ", Path3.exp())
 
 # print("P.laplacian: ", P.to_laplacian())
 

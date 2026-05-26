@@ -276,11 +276,24 @@ class Polyform(Polysimplex):
             result += bilinear * coeff
         return result
 
+    # def exp(self, tolerance=1e-10):
+    #     # Для полиформ: экспонента = Product (1 + term) для всех термов
+    #     result = Polyform.one()
+    #     for term, coeff in self.terms.items():
+    #         # term — quForm, coeff — коэффициент
+    #         factor = Polyform({quForm.one(): 1, term: coeff})
+    #         result = result * factor
+    #         # print('factor: ', factor)
+    #         # print('result: ', result)
+    #     return result
+    
     def exp(self, tolerance=1e-10):
-        # Для полиформ: экспонента = Product (1 + term) для всех термов
+        # Для полиформ: экспонента = ∏ (1 + coeff * term) для всех термов
         result = Polyform.one()
         for term, coeff in self.terms.items():
-            # term — quForm, coeff — коэффициент
-            factor = Polyform({quForm.one(): 1, term: coeff})
+            # Создаём (1 + coeff * term)
+            one = Polyform.one()
+            part = Polyform({term: coeff})
+            factor = one + part   # сложение двух полиформ
             result = result * factor
         return result
