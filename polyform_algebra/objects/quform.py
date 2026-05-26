@@ -53,28 +53,15 @@ class quForm(Simplex):
     def __neg__(self):
         return self.as_polyform().__neg__()
 
-    # def __mul__(self, other):
-    #     from ..combinations.polyform import Polyform
-    #     if isinstance(other, (int, float)):
-    #         return self.as_polyform() * other
-    #     if isinstance(other, quForm):
-    #         result = super().__mul__(other)
-    #         if result.is_zero(): return quForm.zero()
-    #         return quForm(result)
-    #     if isinstance(other, Polyform):
-    #         return self.as_polyform() * other
-    #     return NotImplemented
-
     def __mul__(self, other):
+        from ..combinations.polyform import Polyform
         if isinstance(other, (int, float)):
             return self.as_polyform() * other
         if isinstance(other, quForm):
             if self.is_one() and other.is_one(): return quForm.one()
             result = super().__mul__(other)
-            if result.is_zero():
-                return quForm.zero()
-            if result.is_one():
-                return quForm.one()
+            if result.is_zero(): return quForm.zero()
+            if result.is_one(): return quForm.one()
             return quForm(result)
         if isinstance(other, Polyform):
             return self.as_polyform() * other

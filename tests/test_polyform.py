@@ -13,10 +13,15 @@ a, b, c, d, e, f, g, h, r, x, y, z = Point.create_list(['a', 'b', 'c', 'd', 'e',
 
 # ---------- И формы ----------
 qf_ab = quForm([(a, b)])
+qf_ac = quForm([(a, c)])
+qf_ad = quForm([(a, d)])
 qf_bc = quForm([(b, c)])
+qf_bd = quForm([(b, d)])
 qf_cd = quForm([(c, d)])
+
 qf_abc = quForm([(a, b, c)])
 qf_bcd = quForm([(b, c, d)])
+
 qf_ab_cd = quForm([(a, b), (c, d)])
 qf_abcd = quForm([(a, b, c, d)])
 
@@ -51,16 +56,16 @@ def test_Polyform_equal():
     ])
     assert L1.is_equivalent(L2) == True
 
+def test_Polyform_exp():
+    pfPath3 = qf_ab + qf_bc
+    pfPathExp = quForm.one() + qf_ab + qf_bc + qf_abc
+    assert pfPath3.exp() == pfPathExp
 
+# ---------- Metric ----------
 
-'''
-def test_polyform_from_components():
-    v = Vector({(a,b): 1})          # b - a
-    form = quForm([{b,c}])                # форма из ребра b-c
-    qf = Polyform.from_components([v, form])
-    assert not qf.is_zero()
-    # Проверим, что результат содержит форму {a,b,c} с ненулевым коэффициентом
-    expected_form = quForm([{a,b,c}])
-    assert qf.terms.get(expected_form, 0) != 0
-
-'''
+def test_Path_Potential():
+    pfPath4 = qf_ab + qf_bc + qf_cd
+    pfPathExp = pfPath4.exp()
+    assert pfPathExp.potential(qf_ab) == 1
+    assert pfPathExp.potential(qf_ac) == 2
+    assert pfPathExp.potential(qf_ad) == 3

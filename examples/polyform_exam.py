@@ -68,32 +68,9 @@ Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
 Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
 Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
 
-print("Path3.exp: ", Path3.exp())
+plMetric = Path3.exp()
 
-# print("P.laplacian: ", P.to_laplacian())
+print("Metric: ", plMetric)
 
-# После последних изменений отвалилось умножение полиформ на форму. Самого кода умножения в классе полиформ нет, скорее всего используется код из линейных комбинаций. Он там такой:
-#     def __mul__(self, other):
-#         if isinstance(other, (int, float)): return self.__rmul__(other)
-#         if isinstance(other, LinearCombination):
-#             if self.is_zero() or other.is_zero(): return self.zero()
-#             if self.is_one(): return other
-#             if other.is_one(): return self
-#             if self.term_type != other.term_type:
-#                 raise TypeError("Cannot multiply combinations with different term types")
-#             return self._mul_terms(other)
-#         if isinstance(other, Monoid): # Проверка совместимости типа
-#             if self.term_type is not None and not isinstance(other, self.term_type):
-#                 raise TypeError(f"Cannot multiply {self.__class__.__name__} of {self.term_type} by {type(other)}")
-#             return self * self.__class__({other: 1})
-#         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(other)}")
+print(plMetric.norm(f_ac))
 
-#     def __rmul__(self, scalar):
-#         if isinstance(scalar, (int, float)):
-#             new = self.__class__()
-#             new.terms = Counter({k: v * scalar for k, v in self.terms.items()})
-#             new.term_type = self.term_type   # добавлено
-#             new._finalize()
-#             new._update_cached_grades()
-#             return new
-#         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(scalar)}")
