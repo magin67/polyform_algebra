@@ -112,8 +112,9 @@ class Polyform(Polysimplex):
         if isinstance(lead, list): return sum(lead)
         return lead
 
-    def norm(self, obj_poly):
-        pot = self.potential(obj_poly)
+    def norm(self, obj_polyform):
+        # obj_polyform - quForm or Polyform
+        pot = self.potential(obj_polyform)
         if pot == 0: return 0
         metric_lead = self.leading_coefficient()
         if isinstance(metric_lead, list):
@@ -124,7 +125,7 @@ class Polyform(Polysimplex):
 
     @staticmethod
     def polar_form(p, q, tolerance=1e-10):
-        # p, q - фреймы (Polysimplex)
+        # Это полярная форма элементов (векторов и/или точек) p, q, для которых известны фреймы (Polysimplex)
         # Собираем базисные элементы
         basis_elements = sorted(p.get_elements('all') | q.get_elements('all'), key=str)
         
@@ -165,6 +166,7 @@ class Polyform(Polysimplex):
 
     @staticmethod
     def scalar_product(p, q, tolerance=1e-10):
+        # p, q - фреймы (Polysimplex)
         return Polyform.polar_form(p, q, tolerance) * 0.5
 
     def to_matrix(self):
@@ -276,17 +278,6 @@ class Polyform(Polysimplex):
             result += bilinear * coeff
         return result
 
-    # def exp(self, tolerance=1e-10):
-    #     # Для полиформ: экспонента = Product (1 + term) для всех термов
-    #     result = Polyform.one()
-    #     for term, coeff in self.terms.items():
-    #         # term — quForm, coeff — коэффициент
-    #         factor = Polyform({quForm.one(): 1, term: coeff})
-    #         result = result * factor
-    #         # print('factor: ', factor)
-    #         # print('result: ', result)
-    #     return result
-    
     def exp(self, tolerance=1e-10):
         # Для полиформ: экспонента = ∏ (1 + coeff * term) для всех термов
         result = Polyform.one()

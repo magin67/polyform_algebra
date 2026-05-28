@@ -8,19 +8,28 @@ from polyform_algebra._core.basis import Basis
 import numpy as np
 import networkx as nx
 
-a, b, c, d = Point.create_list(['a', 'b', 'c', 'd'])
+a, b, c, d, e, f, g, h = Point.create_list(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
 
 # Формы
 f_ab = quForm([(a, b)])
 f_bc = quForm([(b, c)])
-f_ac = quForm([(a, c)])
 f_cd = quForm([(c, d)])
+f_de = quForm([(d, e)])
+
+f_ac = quForm([(a, c)])
 f_ad = quForm([(a, d)])
+f_ae = quForm([(a, e)])
 
 f_abc = quForm([(a, b, c)])
+f_abd = quForm([(a, b, d)])
+f_acd = quForm([(a, c, d)])
+f_bcd = quForm([(b, c, d)])
 
 f_ab_cd = quForm([(a, b), (c, d)])
 f_bc_da = quForm([(b, c), (d, a)])
+f_ad_bc = quForm([(a, d), (b, c)])
+
+f_abcd = quForm([(a, b, c, d)])
 
 # Полиформы
 print("Полиформы:")
@@ -37,9 +46,8 @@ Q = Polyform(f_cd)
 
 # print("P*f_bc: ", P*f_bc)
 
-print("qu1*qu1: ", quForm.one()*quForm.one())
-
-print("Poly1*Poly1: ", Polyform.one() * Polyform.one())
+# print("qu1*qu1: ", quForm.one()*quForm.one())
+# print("Poly1*Poly1: ", Polyform.one() * Polyform.one())
 
 # Эквивалентность. Проверяем тождество тетраэдра
 
@@ -63,14 +71,30 @@ L2 = Polyform.from_pairs([
 
 # print("L1 == L2: ", L1.is_equivalent(L2))
 
-Path3 = Polyform({f_ab: 1, f_bc: 1})
-Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
-Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
-Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
+Path3 = f_ab + f_bc
+Path4 = Path3 + f_cd
+Path5 = Path4 + f_de
+Cycle3 = Path3 + f_ac
+Cycle4 = Path4 + f_ad
+Cycle5 = Path5 + f_ae
 
-plMetric = Path3.exp()
-
+plMetricPath4 = Path4.exp()
+plMetric = plMetricPath4
 print("Metric: ", plMetric)
+print("norm(ac): ", plMetric.norm(f_ac))
 
-print(plMetric.norm(f_ac))
+# --- Скалярное произведение векторов ---
+plMetricCycle = Cycle5.exp()
+plMetric = plMetricCycle #plMetricPath4
 
+sprod = (b - a)@(c - e)
+print("potential{(v1)@(v2)}: ", plMetric.potential(sprod))
+
+# --- Скалярное произведение треугольников ---
+
+f_acd_bcd = f_acd + f_bcd - f_ab_cd
+f_abc_bcd = f_abc + f_bcd - f_ad_bc
+
+plMetric = Path5.exp() #plMetricCycle #plMetricPath4
+print("norm{acd, bcd}: ", plMetric.potential(f_acd_bcd))
+print("norm{abc, bcd}: ", plMetric.potential(f_abc_bcd))
