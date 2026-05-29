@@ -114,7 +114,8 @@ class Polyform(Polysimplex):
         prod = metric_part * obj_polyform
         if prod.is_zero(): return 0
         lead = prod.leading_coefficient()
-        if isinstance(lead, list): return sum(lead)
+        if isinstance(lead, list): # тут пока поставим костыль, считаем формы чистых симплексов нулевыми
+            return 0 #sum(lead)
         return lead
 
     def norm(self, obj_polyform):
