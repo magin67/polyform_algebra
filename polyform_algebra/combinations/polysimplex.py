@@ -108,32 +108,6 @@ class Polysimplex(LinearCombination):
         from .polyform import Polyform
         return Polyform.scalar_product(self, other)
 
-    def get_elements(self, kind='all'):
-        """
-        Возвращает множество элементов (точек или векторов), входящих в полисимплекс.
-        kind: 'all' - все элементы,
-            'points' - только точки (multiplicity == 1),
-            'vectors' - только векторы (multiplicity == 0).
-        """
-        elements = set()
-
-        def add_if_matches(elem):
-            if kind == 'all':
-                elements.add(elem)
-            elif kind == 'points' and hasattr(elem, 'multiplicity') and elem.multiplicity == 1:
-                elements.add(elem)
-            elif kind == 'vectors' and hasattr(elem, 'multiplicity') and elem.multiplicity == 0:
-                elements.add(elem)
-
-        for term in self.terms:
-            for comp in term.components:
-                if isinstance(comp, tuple):
-                    for elem in comp:
-                        add_if_matches(elem)
-                else:
-                    add_if_matches(comp)
-        return elements
-
     def terms_lists(self, as_atomic=True):
         """
         Возвращает (список_термов, список_коэффициентов).

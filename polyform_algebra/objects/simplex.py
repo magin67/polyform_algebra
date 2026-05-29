@@ -70,6 +70,31 @@ class Simplex(Monoid):
             return 'boundary'
         return 'mixed'
 
+    def get_elements(self, kind='all'):
+        """
+        Возвращает множество элементов, входящих в симплекс.
+        kind: 'all' - все элементы,
+            'points' - только точки (multiplicity == 1),
+            'vectors' - только векторы (multiplicity == 0).
+        """
+        elements = set()
+
+        def add_if_matches(elem):
+            if kind == 'all':
+                elements.add(elem)
+            elif kind == 'points' and elem.multiplicity == 1:
+                elements.add(elem)
+            elif kind == 'vectors' and elem.multiplicity == 0:
+                elements.add(elem)
+
+        for comp in self.components:
+            if isinstance(comp, tuple):
+                for elem in comp:
+                    add_if_matches(elem)
+            else:
+                add_if_matches(comp)
+        return elements
+
     # --------------------------------------------------------------------------
     # Вспомогательные методы для нормализации
     # --------------------------------------------------------------------------
@@ -211,10 +236,6 @@ class Simplex(Monoid):
     def __neg__(self):
         return Simplex(self.components, sign=-self.sign)
 
-    def as_polysimplex(self):
-        from ..combinations.polysimplex import Polysimplex
-        return Polysimplex({self: 1})
-
     def __add__(self, other):
         from ..combinations.polysimplex import Polysimplex
         if isinstance(other, Simplex):
@@ -243,6 +264,10 @@ class Simplex(Monoid):
 
     def __rmul__(self, other):
         return self * other
+
+    def __matmul__(self, other):
+        from ..combinations.polyform import Polyform
+        return Polyform.scalar_product(self.as_polysimplex(), other)
 
     def __str__(self):
         if self.is_zero(): return "[]"
@@ -295,6 +320,10 @@ class Simplex(Monoid):
             coeff = (-1) ** i
             result += Polysimplex({rest_simplex: coeff})
         return result
+
+    def as_polysimplex(self):
+        from ..combinations.polysimplex import Polysimplex
+        return Polysimplex({self: 1})
 
     def to_polysimplex(self):
         from ..combinations.polysimplex import Polysimplex

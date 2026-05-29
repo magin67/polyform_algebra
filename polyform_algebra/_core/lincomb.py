@@ -185,12 +185,11 @@ class LinearCombination(ABC):
     def __iter__(self):
         return iter(self.terms.items())
 
-    # Методы для работы с элементами (вершинами), общие для всех наследников
-    def get_elements(self, tolerance=None):
+    # Методы для работы с элементами, общие для всех наследников
+    def get_elements(self, kind='all'):
         elements = set()
         for term, coeff in self.terms.items():
-            if tolerance is not None and abs(coeff) <= tolerance: continue
-            elements.update(term.get_elements())
+            elements.update(term.get_elements(kind=kind))
         return elements
 
     def extract_grade(self, grade): # Возвращает новую линейную комбинацию того же типа, содержащую только слагаемые данного грейда.

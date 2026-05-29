@@ -4,6 +4,7 @@ from collections import Counter
 import numpy as np
 
 from .polysimplex import Polysimplex
+from ..objects.simplex import Simplex
 from ..objects.quform import quForm
 from ..objects.element import Element, Point   # новый класс вектора
 
@@ -131,8 +132,11 @@ class Polyform(Polysimplex):
     def polar_form(p, q, tolerance=1e-10):
         # Это полярная форма элементов (векторов и/или точек) p, q, для которых известны фреймы (Polysimplex)
         # Собираем базисные элементы
+        if isinstance(p, Simplex): p = p.as_polysimplex()
+        if isinstance(q, Simplex): q = q.as_polysimplex()
+
         basis_elements = sorted(p.get_elements('all') | q.get_elements('all'), key=str)
-        
+
         coeff_p = p.as_coefficient_dict(basis_elements)
         coeff_q = q.as_coefficient_dict(basis_elements)
         

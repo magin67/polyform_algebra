@@ -91,8 +91,9 @@ plGraph, verts = Polyform.from_networkx(nxg, return_points='list')
 plGraphMetric = plGraph.exp()
 plMetric = plGraphMetric
 
-sprod = (verts[4] - verts[0])@(verts[5] - verts[2])
-print("potential{(v1)@(v2)}: ", plMetric.potential(sprod))
+sprod = (verts[4] - verts[0])@(verts[5] - verts[3])
+# sprod = (verts[2] - verts[0])@(verts[3]) # - verts[3]
+print("norm{(v1)@(v2)}: ", plMetric.norm(sprod))
 
 # --- Скалярное произведение треугольников ---
 
