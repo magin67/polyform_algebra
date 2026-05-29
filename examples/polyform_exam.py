@@ -1,11 +1,10 @@
 from polyform_algebra.objects.element import Point, Vector
 from polyform_algebra.objects.quform import quForm
 
-from polyform_algebra.combinations.polysimplex import Polysimplex
+# from polyform_algebra.combinations.polysimplex import Polysimplex
 from polyform_algebra.combinations.polyform import Polyform
-from polyform_algebra._core.basis import Basis
+# from polyform_algebra._core.basis import Basis
 
-import numpy as np
 import networkx as nx
 
 a, b, c, d, e, f, g, h = Point.create_list(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'])
@@ -32,7 +31,7 @@ f_ad_bc = quForm([(a, d), (b, c)])
 f_abcd = quForm([(a, b, c, d)])
 
 # Полиформы
-print("Полиформы:")
+# print("Полиформы:")
 
 # P1 = Polyform({f_ab: 2, f_bc: -1})
 P = Polyform(2*f_ab - f_bc)
@@ -80,21 +79,26 @@ Cycle5 = Path5 + f_ae
 
 plMetricPath4 = Path4.exp()
 plMetric = plMetricPath4
-print("Metric: ", plMetric)
-print("norm(ac): ", plMetric.norm(f_ac))
+# print("Metric: ", plMetric)
+# print("norm(ac): ", plMetric.norm(f_ac))
 
 # --- Скалярное произведение векторов ---
-plMetricCycle = Cycle5.exp()
-plMetric = plMetricCycle #plMetricPath4
+n = 8
+nxg = nx.cycle_graph(n)
+# nxg = nx.path_graph(n)
+plGraph, verts = Polyform.from_networkx(nxg, return_points='list')
 
-sprod = (b - a)@(c - e)
+plGraphMetric = plGraph.exp()
+plMetric = plGraphMetric
+
+sprod = (verts[4] - verts[0])@(verts[5] - verts[2])
 print("potential{(v1)@(v2)}: ", plMetric.potential(sprod))
 
 # --- Скалярное произведение треугольников ---
 
-f_acd_bcd = f_acd + f_bcd - f_ab_cd
-f_abc_bcd = f_abc + f_bcd - f_ad_bc
+# f_acd_bcd = f_acd + f_bcd - f_ab_cd
+# f_abc_bcd = f_abc + f_bcd - f_ad_bc
 
-plMetric = Path5.exp() #plMetricCycle #plMetricPath4
-print("norm{acd, bcd}: ", plMetric.potential(f_acd_bcd))
-print("norm{abc, bcd}: ", plMetric.potential(f_abc_bcd))
+# plMetric = Path5.exp() #plMetricCycle #plMetricPath4
+# print("norm{acd, bcd}: ", plMetric.potential(f_acd_bcd))
+# print("norm{abc, bcd}: ", plMetric.potential(f_abc_bcd))

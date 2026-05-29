@@ -17,21 +17,25 @@ class Polyform(Polysimplex):
         return cls({quForm.one(): 1})
 
     @classmethod
-    def from_networkx(cls, G):
+    # генерация полиформы на основе графа, созданного в netwokx
+    def from_networkx(cls, G, return_points=None):
         nodes = sorted(G.nodes())
-        # Создаём точки с именами, равными строковому представлению узлов
         points = {node: Point(str(node)) for node in nodes}
         terms = Counter()
         for u, v, data in G.edges(data=True):
             weight = data.get('weight', 1)
             if weight != 0:
-                a = points[u]
-                b = points[v]
-                # Используем кортеж (a,b) — граница ориентированного ребра
+                a, b = points[u], points[v]
                 form = quForm([(a, b)])
                 terms[form] += weight
-        return cls(terms)
-
+        poly = cls(terms)
+        if return_points == 'dict':
+            return poly, points
+        elif return_points == 'list':
+            return poly, [points[node] for node in nodes]
+        else:
+            return poly
+    
     @classmethod
     def from_laplacian(cls, laplacian_matrix, vertex_labels, tolerance=1e-10):
         L = np.asarray(laplacian_matrix)

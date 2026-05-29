@@ -1,12 +1,10 @@
+import networkx as nx
+
 from polyform_algebra.objects.element import Point, Vector
 from polyform_algebra.objects.quform import quForm
-
 from polyform_algebra.combinations.polysimplex import Polysimplex
 from polyform_algebra.combinations.polyform import Polyform
 from polyform_algebra._core.basis import Basis
-
-import numpy as np
-import networkx as nx
 
 a, b, c, d = Point.create_list(['a', 'b', 'c', 'd'])
 
@@ -23,6 +21,9 @@ f_ab_cd = quForm([(a, b), (c, d)])
 f_bc_da = quForm([(b, c), (d, a)])
 
 # Полиформы
+
+# G_cycle = nx.cycle_graph(5)
+# poly = Polyform.from_networkx(G_cycle)
 
 Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
 Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})

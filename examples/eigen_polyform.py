@@ -1,12 +1,13 @@
 import networkx as nx
-import sympy as sp
 
+from polyform_algebra.objects.element import Point, Vector
+from polyform_algebra.objects.quform import quForm
+
+from polyform_algebra.combinations.polysimplex import Polysimplex
 from polyform_algebra.combinations.polyform import Polyform
-from polyform_algebra.combinations.poly_bf import PolyBForm
-from polyform_algebra.combinations.affine_vector import AffineVector
+from polyform_algebra._core.basis import Basis
 
 # ---------- Переменные ----------
-a, b, c, d, e, f, g, h, r, x, y, z = sp.symbols('a b c d e f g h r x y z')
 
 
 # 1. Создаем полиформу и ее собственное представление
