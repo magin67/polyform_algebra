@@ -1,7 +1,6 @@
 # @title Линейная комбинация
 
-# from typing import Dict, Union, List, Set, Tuple, Any
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import Counter
 
 from .monoid import Monoid
@@ -32,22 +31,24 @@ class LinearCombination(ABC):
             raise TypeError(f"Unsupported type: {type(data)}")
         self._finalize()
 
-    def _finalize(self, tolerance=1e-10): # Очищает нулевые термы, округляет коэффициенты и обновляет кэшированные грейды.
-        # Удаляем термы с нулевым коэффициентом
-        to_del = [t for t, c in self.terms.items() if c == 0]
-        for t in to_del: del self.terms[t]
-        # Округляем оставшиеся коэффициенты
-        for t, c in list(self.terms.items()):
-            rounded = self._round_value(c, tolerance)
-            if rounded == 0: del self.terms[t]
-            else: self.terms[t] = rounded
-        self._update_cached_grades() # Обновляем кэшированные грейды
-
-    def _create_empty(self): return self.__class__()
+    def _finalize(self, tolerance=1e-10):
+        """Round coefficients, remove zeros and refresh cached grades in one pass."""
+        for term, coeff in list(self.terms.items()):
+            rounded = self._round_value(coeff, tolerance)
+            if rounded == 0:
+                del self.terms[term]
+            else:
+                self.terms[term] = rounded
+        self._update_cached_grades()
 
     def one(self): return self.__class__({self.term_type.one(): 1})
 
-    def is_one(self): return len(self.terms) == 1 and list(self.terms.values())[0] == 1 and list(self.terms.keys())[0].is_one()
+    def is_one(self):
+        """The unit has exactly one unit term with coefficient one."""
+        if len(self.terms) != 1:
+            return False
+        term, coeff = next(iter(self.terms.items()))
+        return coeff == 1 and term.is_one()
 
     def is_zero(self): return len(self.terms) == 0
 
@@ -160,7 +161,6 @@ class LinearCombination(ABC):
             new.terms = Counter({k: v * scalar for k, v in self.terms.items()})
             new.term_type = self.term_type   # добавлено
             new._finalize()
-            new._update_cached_grades()
             return new
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(scalar)}")
 

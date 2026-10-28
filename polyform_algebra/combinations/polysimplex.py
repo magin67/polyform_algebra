@@ -17,6 +17,7 @@ class Polysimplex(LinearCombination):
         return cls({term_type.one(): 1})
 
     def __init__(self, data=None, term_type=Simplex):
+        """Normalize all supported inputs through one coefficient-accumulation path."""
         self.term_type = term_type
         if data is None:
             super().__init__(term_type=term_type)
@@ -45,13 +46,7 @@ class Polysimplex(LinearCombination):
         elif isinstance(data, term_type):
             items = [(data, 1)]
         elif isinstance(data, Polysimplex):
-            for term, coeff in data.terms.items():
-                key, sign = normalize(term)
-                if key is None:
-                    continue
-                prepared[key] = prepared.get(key, 0) + coeff * sign
-            super().__init__(prepared, term_type=term_type)
-            return
+            items = data.terms.items()
         else:
             raise TypeError(f"Unsupported type: {type(data)}")
 
@@ -62,6 +57,10 @@ class Polysimplex(LinearCombination):
             prepared[key] = prepared.get(key, 0) + coeff * sign
 
         super().__init__(prepared, term_type=term_type)
+
+    def _from_terms(self, terms):
+        """Construct a result with the current term type; subclasses preserve context."""
+        return self.__class__(terms, term_type=self.term_type)
 
     def kind(self):
         if self.is_zero(): return 'atomic'   # или 'zero'
@@ -153,39 +152,42 @@ class Polysimplex(LinearCombination):
         return self.boundary().is_zero()
 
     def extract_max_coeff(self, grade=None, comp_count=None, by_abs=True):
+        """Select all tied maxima after optional grade and component-count filters."""
         filtered = [(term, coeff) for term, coeff in self.terms.items()
                     if (grade is None or term.grade() == grade)
                     and (comp_count is None or term.size() == comp_count)]
         if not filtered:
-            return self.__class__()
+            return self._from_terms({})
         if by_abs:
             max_val = max(abs(c) for _, c in filtered)
             selected = [(term, coeff) for term, coeff in filtered if abs(coeff) == max_val]
         else:
             max_val = max(c for _, c in filtered)
             selected = [(term, coeff) for term, coeff in filtered if coeff == max_val]
-        return self.__class__(dict(selected), term_type=self.term_type)
+        return self._from_terms(dict(selected))
 
     def extract_max_coeff_all_grades(self, comp_count=None, by_abs=True):
+        """Combine coefficient maxima selected independently within each grade."""
         max_grade = self.max_grade()
         result_terms = {}
         for g in range(max_grade + 1):
             sub = self.extract_max_coeff(grade=g, comp_count=comp_count, by_abs=by_abs)
             for term, coeff in sub.terms.items():
                 result_terms[term] = result_terms.get(term, 0) + coeff
-        return self.__class__(result_terms, term_type=self.term_type)
+        return self._from_terms(result_terms)
 
     def extract_diagonal_components(self):
+        """Retain terms whose size equals max_grade - term_grade + 1."""
         mg = self.max_grade()
         if mg < 0:
-            return self.__class__()
+            return self._from_terms({})
         result_terms = {}
         for term, coeff in self.terms.items():
             k = term.grade()
             comp_cnt = term.size()
             if comp_cnt == mg - k + 1:
                 result_terms[term] = result_terms.get(term, 0) + coeff
-        return self.__class__(result_terms, term_type=self.term_type)
+        return self._from_terms(result_terms)
 
     def transform(self, from_basis, to_basis, tolerance=1e-10):
         from .._core.basis import Basis
@@ -218,7 +220,7 @@ class Polysimplex(LinearCombination):
                 elem = to_basis[j]
                 s = Simplex([elem], sign=1)
                 new_terms[s] = c
-        return self.__class__(new_terms, term_type=self.term_type)
+        return self._from_terms(new_terms)
     
     def to_quadratic_form(self, basis, tolerance=1e-10):
         """

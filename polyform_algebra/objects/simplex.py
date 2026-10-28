@@ -179,9 +179,6 @@ class Simplex(Monoid):
         c = self.canonical()
         return hash((c.components, c.sign, c.is_zero()))
 
-    def __neg__(self):
-        return Simplex(self.components, sign=-self.sign)
-
     def __add__(self, other):
         from ..combinations.polysimplex import Polysimplex
         if isinstance(other, Simplex):

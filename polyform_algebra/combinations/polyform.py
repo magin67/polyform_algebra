@@ -59,11 +59,9 @@ class Polyform(Polysimplex):
         return cls(terms, vertices=vertex_labels)
 
     @classmethod
-    def from_pairs(cls, pairs): # pairs: список пар (key, coeff), где key может быть списком или кортежем
-        new_data = {}
-        for key, value in pairs:
-            new_data[quForm(key)] = value
-        return cls(new_data)
+    def from_pairs(cls, pairs):
+        """Build a polyform, adding coefficients of repeated quadratic terms."""
+        return cls([(quForm(key), coeff) for key, coeff in pairs])
 
     def __init__(self, data=None, *, vertices=None):
         if vertices is None and isinstance(data, Polyform):
@@ -79,6 +77,10 @@ class Polyform(Polysimplex):
         if self._vertices is not None:
             return self._vertices
         return tuple(sorted(self.get_elements(), key=str))
+
+    def _from_terms(self, terms):
+        """Rebuild selected terms without losing isolated graph vertices."""
+        return self.__class__(terms, vertices=self._vertices)
 
     def _with_context(self, result, other=None):
         """Переносит вершины, которые могут исчезнуть из ненулевых слагаемых.
