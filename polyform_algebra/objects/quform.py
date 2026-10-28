@@ -20,6 +20,7 @@ class quForm(Simplex):
             super().__init__(data, sign=1, dual=dual, multiplicity=multiplicity)
         else:
             raise TypeError("quForm data must be list, tuple or Simplex")
+        self.sign = 1  # Ориентация исчезает при квадратизации.
     
     @classmethod
     def one(cls):
@@ -71,6 +72,7 @@ class quForm(Simplex):
         return self * other
 
     def canonical(self):
+        if self.is_zero() or self.is_one(): return self
         # Сортируем элементы внутри каждого кортежа
         sorted_components = []
         for comp in self.components:

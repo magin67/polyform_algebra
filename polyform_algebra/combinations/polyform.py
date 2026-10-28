@@ -29,7 +29,7 @@ class Polyform(Polysimplex):
                 a, b = points[u], points[v]
                 form = quForm([(a, b)])
                 terms[form] += weight
-        poly = cls(terms)
+        poly = cls(terms, vertices=points.values())
         if return_points == 'dict':
             return poly, points
         elif return_points == 'list':
@@ -56,7 +56,7 @@ class Polyform(Polysimplex):
                     form = quForm([(a, b)])
                     if not form.is_zero():
                         terms[form] += weight
-        return cls(terms)
+        return cls(terms, vertices=vertex_labels)
 
     @classmethod
     def from_pairs(cls, pairs): # pairs: список пар (key, coeff), где key может быть списком или кортежем
@@ -65,8 +65,64 @@ class Polyform(Polysimplex):
             new_data[quForm(key)] = value
         return cls(new_data)
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, *, vertices=None):
+        if vertices is None and isinstance(data, Polyform):
+            vertices = data._vertices
+        self._vertices = None if vertices is None else tuple(dict.fromkeys(vertices))
         super().__init__(data, term_type=quForm)
+        if self._vertices is not None and not self.get_elements().issubset(self._vertices):
+            raise ValueError("Form contains elements outside the supplied vertices")
+
+    @property
+    def vertices(self):
+        """Фиксированные вершины графа, включая изолированные; иначе носитель записи."""
+        if self._vertices is not None:
+            return self._vertices
+        return tuple(sorted(self.get_elements(), key=str))
+
+    def _with_context(self, result, other=None):
+        if result is NotImplemented: return result
+        explicit = self._vertices is not None or getattr(other, '_vertices', None) is not None
+        if not explicit: return result
+        vertices = list(self.vertices)
+        if isinstance(other, Polyform):
+            vertices.extend(other.vertices)
+        elif isinstance(other, Simplex):
+            vertices.extend(sorted(other.get_elements(), key=str))
+        return Polyform(result, vertices=vertices)
+
+    def __add__(self, other):
+        return self._with_context(super().__add__(other), other)
+
+    def __neg__(self):
+        return self._with_context(super().__neg__())
+
+    def __mul__(self, other):
+        return self._with_context(super().__mul__(other), other)
+
+    def __rmul__(self, scalar):
+        return self._with_context(super().__rmul__(scalar))
+
+    def __pow__(self, exponent):
+        return self._with_context(super().__pow__(exponent))
+
+    def extract_grade(self, grade):
+        return self._with_context(super().extract_grade(grade))
+
+    def _spanning_form(self):
+        # Старое базисное представление с атомарными формами имеет другой объём.
+        if any(not term.is_one() and term.kind() != 'boundary' for term in self.terms):
+            return None
+        vertices = self.vertices
+        if not vertices:
+            return None
+        return quForm([tuple(vertices)]) if len(vertices) > 1 else quForm.one()
+
+    def _validate_query(self, obj):
+        if not isinstance(obj, (quForm, Polyform)):
+            raise TypeError("Expected quForm or Polyform")
+        if not obj.get_elements().issubset(self.vertices):
+            raise ValueError("Query contains elements outside the metric vertices")
 
     @staticmethod
     def add_term(prepared, term, coeff):
@@ -101,33 +157,29 @@ class Polyform(Polysimplex):
 
     # --- Методы метрики ---
     def potential(self, obj_polyform):
-        # obj_polyform - quForm or Polyform
-        if self.is_zero(): return 0
-        g_metric = self.grade()
-        g_obj = obj_polyform.grade()
-        if self.is_homogeneous():
-            metric_part = self
-        else:
-            if g_obj < 0 or g_metric < g_obj: return 0
-            metric_part = self.extract_grade(g_metric - g_obj)
-        if metric_part.is_zero(): return 0
-        prod = metric_part * obj_polyform
-        if prod.is_zero(): return 0
-        lead = prod.leading_coefficient()
-        if isinstance(lead, list): # тут пока поставим костыль, считаем формы чистых симплексов нулевыми
-            return 0 #sum(lead)
+        """Коэффициент произведения при фиксированной остовной форме T_n."""
+        self._validate_query(obj_polyform)
+        spanning = self._spanning_form()
+        prod = self * obj_polyform
+        if spanning is not None:
+            return prod.terms.get(spanning, 0)
+        # Совместимость с существующими атомарными базисами: фиксируем грейд self.
+        top = prod.extract_grade(self.grade())
+        lead = top.leading_coefficient()
+        if isinstance(lead, list):
+            raise ValueError("Metric needs a fixed top form; multiple coefficients found")
         return lead
 
     def norm(self, obj_polyform):
-        # obj_polyform - quForm or Polyform
-        pot = self.potential(obj_polyform)
-        if pot == 0: return 0
-        metric_lead = self.leading_coefficient()
+        """Нормированный потенциал; нулевая остовная компонента недопустима."""
+        self._validate_query(obj_polyform)
+        spanning = self._spanning_form()
+        metric_lead = self.terms.get(spanning, 0) if spanning is not None else self.leading_coefficient()
         if isinstance(metric_lead, list):
-            metric_lead = sum(metric_lead)
+            raise ValueError("Metric needs a fixed top form; multiple coefficients found")
         if metric_lead == 0:
-            raise ValueError("Metric leading coefficient is zero")
-        return pot / metric_lead
+            raise ValueError("Metric has zero spanning coefficient; normalization is undefined")
+        return self.potential(obj_polyform) / metric_lead
 
     @staticmethod
     def polar_form(p, q, tolerance=1e-10):
@@ -135,6 +187,19 @@ class Polyform(Polysimplex):
         # Собираем базисные элементы
         if isinstance(p, Simplex): p = p.as_polysimplex()
         if isinstance(q, Simplex): q = q.as_polysimplex()
+
+        for obj in (p, q):
+            if not isinstance(obj, Polysimplex) or isinstance(obj, Polyform):
+                raise TypeError("Expected an external object, not a form")
+            if not obj.is_zero() and (not obj.is_homogeneous() or obj.grade() != 1):
+                raise ValueError("Polarization currently supports only homogeneous grade 1 objects")
+        # Раскрываем (ab) в b-a перед извлечением атомарных коэффициентов.
+        def expand(obj):
+            result = Polysimplex.zero()
+            for term, coeff in obj.terms.items():
+                result += coeff * term.to_polysimplex()
+            return result
+        p, q = expand(p), expand(q)
 
         basis_elements = sorted(p.get_elements('all') | q.get_elements('all'), key=str)
 
@@ -185,11 +250,11 @@ class Polyform(Polysimplex):
         для термов quForm([a]) — диагональные.
         Возвращает (matrix, index), где index — словарь {элемент: индекс}.
         """
-        if not self.is_homogeneous() or self.grade() != 1:
+        if not self.is_zero() and (not self.is_homogeneous() or self.grade() != 1):
             raise ValueError("Полиформа должна быть однородной и иметь грейд 1")
 
         # Собираем все элементы (точки или векторы) из полиформы
-        elements = sorted(self.get_elements('all'), key=str)
+        elements = self.vertices
         n = len(elements)
         idx = {elem: i for i, elem in enumerate(elements)}
         M = np.zeros((n, n))
@@ -289,7 +354,7 @@ class Polyform(Polysimplex):
 
     def exp(self, tolerance=1e-10):
         # Для полиформ: экспонента = ∏ (1 + coeff * term) для всех термов
-        result = Polyform.one()
+        result = Polyform(Polyform.one(), vertices=self._vertices)
         for term, coeff in self.terms.items():
             # Создаём (1 + coeff * term)
             one = Polyform.one()

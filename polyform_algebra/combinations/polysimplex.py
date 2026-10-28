@@ -31,7 +31,8 @@ class Polysimplex(LinearCombination):
 
             if term_type.__name__ == 'Simplex':
                 cterm = term.canonical()
-                key = term_type(cterm.components, sign=1)
+                if cterm.is_zero(): return None, None
+                key = term_type.one() if cterm.is_one() else term_type(cterm.components, sign=1)
                 sign_coeff = cterm.sign
 
             return key, sign_coeff

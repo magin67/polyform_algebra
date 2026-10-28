@@ -136,11 +136,8 @@ class LinearCombination(ABC):
                 prod = term1 * term2
                 if prod is not None and not (hasattr(prod, 'is_zero') and prod.is_zero()):
                     result_terms[prod] += coeff1 * coeff2
-        result = self._create_empty()
-        result.terms = result_terms
-        result.term_type = self.term_type
-        result._finalize()
-        return result
+        # Конструктор переносит ориентационные знаки термов в коэффициенты.
+        return self.__class__(result_terms)
 
     def __mul__(self, other):
         if isinstance(other, (int, float)): return self.__rmul__(other)

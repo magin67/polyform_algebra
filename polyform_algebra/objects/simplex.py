@@ -59,6 +59,12 @@ class Simplex(Monoid):
             mult = multiplicity
         super().__init__(tuple(components), multiplicity=mult, dual=dual)
 
+    def is_zero(self):
+        return not self.components and self.multiplicity == -1
+
+    def is_one(self):
+        return not self.components and self.multiplicity != -1
+
     def kind(self):
         """Возвращает 'atomic', 'boundary' или 'mixed'."""
         if self.is_zero() or self.is_one():
@@ -98,120 +104,57 @@ class Simplex(Monoid):
     # --------------------------------------------------------------------------
     # Вспомогательные методы для нормализации
     # --------------------------------------------------------------------------
-    @staticmethod
-    def _normalize_base(base):
-        seen = set()
-        for e in base:
-            if e in seen: return None
-            seen.add(e)
-        return base
-
-    @staticmethod
-    def _normalize_boundaries(boundaries):
-        """
-        Нормализует список кортежей (границ) по правилам Face:
-        - Если две границы имеют >=2 общих элементов -> None (ноль).
-        - Если ровно один общий элемент, они сливаются в один кортеж.
-        Повторяем, пока возможно.
-        Возвращает новый список кортежей или None.
-        """
-        # Работаем с изменяемыми списками для удобства
-        comps = [list(b) for b in boundaries]
-        changed = True
-        while changed:
-            changed = False
-            for i in range(len(comps)):
-                for j in range(i+1, len(comps)):
-                    set_i = set(comps[i])
-                    set_j = set(comps[j])
-                    common = set_i & set_j
-                    if len(common) >= 2: return None
-                    if len(common) == 1:
-                        elem = next(iter(common))
-                        # Циклический сдвиг i: общий элемент в конец
-                        idx_i = comps[i].index(elem)
-                        rotated_i = comps[i][idx_i+1:] + comps[i][:idx_i] + [elem]
-                        # Циклический сдвиг j: общий элемент в начало
-                        idx_j = comps[j].index(elem)
-                        rotated_j = [elem] + comps[j][idx_j+1:] + comps[j][:idx_j]
-                        merged = rotated_i + rotated_j[1:]
-                        comps[i] = merged
-                        comps.pop(j)
-                        changed = True
-                        break
-                if changed:
-                    break
-        return [tuple(c) for c in comps]
-
-    @staticmethod
-    def _merge_base_and_boundaries(base, boundaries):
-        base_list = list(base)
-        boundaries_list = list(boundaries)
-        changed = True
-        while changed:
-            changed = False
-            for i, b in enumerate(boundaries_list):
-                common = [e for e in base_list if e in b]
-                if len(common) >= 2: return None
-                if len(common) == 1:
-                    elem = common[0]
-                    # Не удаляем elem из base_list
-                    boundaries_list.pop(i)
-                    # Добавляем все элементы кортежа, кроме elem (чтобы не дублировать)
-                    new_elems = [e for e in b if e != elem]
-                    base_list.extend(new_elems)
-                    changed = True
-                    break
-        return base_list, boundaries_list
-
     def _full_normalize(self, components):
-        """
-        Полная нормализация списка компонент (смесь атомарных элементов и кортежей).
-        Возвращает новый список компонент или None (если симплекс нулевой).
-        """
-        base = [c for c in components if not isinstance(c, tuple)]
-        boundaries = [c for c in components if isinstance(c, tuple)]
-
-        # 1. Нормализация базы (проверка дубликатов)
-        base = self._normalize_base(base)
-        if base is None: return None
-
-        # 2. Нормализация границ (слияние кортежей)
-        boundaries = self._normalize_boundaries(boundaries)
-        if boundaries is None: return None
-
-        # 3. Свёртка базы и границ
-        merged = self._merge_base_and_boundaries(base, boundaries)
-        if merged is None: return None
-        base, boundaries = merged
-
-        # 4. После свёртки может оказаться, что в базе снова появились дубликаты? Проверим.
-        base = self._normalize_base(base)
-        if base is None: return None
-
-        # 5. Также после свёртки границы могли приобрести общие элементы? В теории нет, но перестрахуемся
-        boundaries = self._normalize_boundaries(boundaries)
-        if boundaries is None: return None
-
-        # Возвращаем объединённый список (база + границы)
-        return base + boundaries
+        """Канонические факторы с градуированными знаками и слиянием по общей вершине."""
+        factors = list(components)
+        def degree(x):
+            return len(x)-1 if isinstance(x, tuple) else 1
+        while True:
+            # Ориентация каждой границы и порядок факторов нормализуются отдельно.
+            for i, factor in enumerate(factors):
+                if isinstance(factor, tuple):
+                    if len(set(factor)) != len(factor): return None
+                    order = sorted(range(len(factor)), key=lambda k: str(factor[k]))
+                    self.sign *= self._permutation_sign(order)
+                    factors[i] = tuple(factor[k] for k in order)
+            order = sorted(range(len(factors)),
+                           key=lambda k: (isinstance(factors[k], tuple), str(factors[k])))
+            for i, old_i in enumerate(order):
+                for old_j in order[i+1:]:
+                    if old_i > old_j:
+                        self.sign *= (-1)**(degree(factors[old_i])*degree(factors[old_j]))
+            factors = [factors[k] for k in order]
+            merged = False
+            for i, left in enumerate(factors):
+                for j in range(i+1, len(factors)):
+                    right = factors[j]
+                    left_tuple = isinstance(left, tuple)
+                    right_tuple = isinstance(right, tuple)
+                    if not left_tuple and not right_tuple:
+                        if left == right: return None
+                        continue
+                    common = (set(left) if left_tuple else {left}) & set(right)
+                    if len(common) >= 2: return None
+                    if not common: continue
+                    pivot = next(iter(common))
+                    # Переносим правый множитель непосредственно за левым.
+                    self.sign *= (-1)**(degree(right)*sum(degree(x) for x in factors[i+1:j]))
+                    self.sign *= (-1)**right.index(pivot)
+                    right_rest = [x for x in right if x != pivot]
+                    if left_tuple:
+                        self.sign *= (-1)**left.index(pivot)
+                        replacement = [tuple([pivot] + [x for x in left if x != pivot] + right_rest)]
+                    else:
+                        replacement = [pivot] + right_rest
+                    factors = factors[:i] + replacement + factors[i+1:j] + factors[j+1:]
+                    merged = True
+                    break
+                if merged: break
+            if not merged: return factors
 
     def canonical(self):
-        if self.is_zero(): return self
-        sign = getattr(self, 'sign', 1)   # запасной вариант
-
-        normalized = self._full_normalize(self.components)
-        if normalized is None or normalized == []: return self.zero()
-
-        temp = Simplex(normalized, sign=sign)
-        # Сортировка компонент по строковому представлению
-        indexed = list(enumerate(temp.components))
-        indexed.sort(key=lambda x: str(x[1]))
-        perm = [i for i, _ in indexed]
-        sign_perm = self._permutation_sign(perm)
-        new_sign = temp.sign * sign_perm
-        sorted_components = tuple(elem for _, elem in indexed)
-        return Simplex(sorted_components, sign=new_sign)
+        if self.is_zero() or self.is_one(): return self
+        return Simplex(self.components, sign=self.sign, multiplicity=self.multiplicity)
 
     @staticmethod
     def _permutation_sign(perm):
@@ -225,13 +168,16 @@ class Simplex(Monoid):
     def __eq__(self, other):
         if not isinstance(other, Simplex):
             return False
+        if self.is_zero() or other.is_zero():
+            return self.is_zero() and other.is_zero()
         c1 = self.canonical()
         c2 = other.canonical()
         return c1.components == c2.components and c1.sign == c2.sign
 
     def __hash__(self):
+        if self.is_zero(): return hash(("Simplex.zero",))
         c = self.canonical()
-        return hash((c.components, c.sign))
+        return hash((c.components, c.sign, c.is_zero()))
 
     def __neg__(self):
         return Simplex(self.components, sign=-self.sign)
@@ -255,6 +201,13 @@ class Simplex(Monoid):
         if isinstance(other, (int, float)):
             return self.as_polysimplex() * other
         if isinstance(other, Simplex):
+            if self.is_zero() or other.is_zero(): return Simplex.zero()
+            if self.is_one():
+                return Simplex(other.components, sign=self.sign * other.sign,
+                               multiplicity=other.multiplicity)
+            if other.is_one():
+                return Simplex(self.components, sign=self.sign * other.sign,
+                               multiplicity=self.multiplicity)
             new_components = list(self.components) + list(other.components)
             new_sign = self.sign * other.sign
             return Simplex(new_components, new_sign).canonical()
@@ -299,26 +252,22 @@ class Simplex(Monoid):
         return total
 
     def boundary(self):
+        """Градуированное правило Лейбница; граница каждой границы равна нулю."""
         from ..combinations.polysimplex import Polysimplex
-        if self.is_zero():
-            return Polysimplex()
-        # Если есть компонента-кортеж (граница), возвращаем ноль
-        for comp in self.components:
+        if self.is_zero() or self.is_one():
+            return Polysimplex.zero()
+        result = Polysimplex.zero()
+        prefix_grade = 0
+        for i, comp in enumerate(self.components):
             if isinstance(comp, tuple):
-                return Polysimplex()
-        n = len(self.components)
-        if n == 0:
-            return Polysimplex()
-        result = Polysimplex()
-        for i in range(n):
-            comp = self.components[i]
-            # Если компонент — вектор (multiplicity=0), пропускаем
-            if hasattr(comp, 'multiplicity') and comp.multiplicity == 0:
+                prefix_grade += len(comp) - 1
                 continue
-            rest = [self.components[j] for j in range(n) if j != i]
-            rest_simplex = Simplex(rest, sign=1)
-            coeff = (-1) ** i
-            result += Polysimplex({rest_simplex: coeff})
+            weight = getattr(comp, 'multiplicity', 1)
+            if weight:
+                rest = self.components[:i] + self.components[i+1:]
+                term = Simplex(rest) if rest else Simplex.one()
+                result += Polysimplex([(term, self.sign * (-1)**prefix_grade * weight)])
+            prefix_grade += 1
         return result
 
     def as_polysimplex(self):
@@ -326,23 +275,18 @@ class Simplex(Monoid):
         return Polysimplex({self: 1})
 
     def to_polysimplex(self):
+        """Раскрывает кортежи-границы, сохраняя ориентацию и атомарные векторы."""
         from ..combinations.polysimplex import Polysimplex
         if self.is_zero():
-            return Polysimplex()
+            return Polysimplex.zero()
         result = Polysimplex.one()
         for comp in self.components:
             if isinstance(comp, tuple):
-                s = Simplex(list(comp), sign=1)
-                poly = s.boundary()
+                poly = Simplex(list(comp)).boundary()
             else:
-                if hasattr(comp, 'multiplicity') and comp.multiplicity == 0:
-                    return Polysimplex()
-                poly = Polysimplex({Simplex([comp], sign=1): 1})
+                poly = Polysimplex({Simplex([comp]): 1})
             result = result * poly
-        # Коррекция знака: если число границ (кортежей) нечётное, умножаем на -1
-        num_boundaries = sum(1 for comp in self.components if isinstance(comp, tuple))
-        if num_boundaries % 2 == 1: result = -result
-        return result
+        return self.sign * result
 
     def to_polyform(self, index=0):
         from ..combinations.polyform import Polyform
