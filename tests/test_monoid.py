@@ -6,17 +6,18 @@ from polyform_algebra._core.monoid import Monoid
 # from abc import ABC
 
 class ConcreteMonoid(Monoid):
-    """Конкретный наследник для тестирования (не абстрактный)."""
+    """Concrete test double for the abstract monoid interface."""
     def __init__(self, components, dual=False, multiplicity=1):
         super().__init__(components, dual, multiplicity)
     def __mul__(self, other):
-        # Минимальная реализация для тестирования базового поведения
+        # Delegate the zero and unit rules to the base implementation.
         result = super().__mul__(other)
         if result is not NotImplemented: return result
-        # Имитация умножения двух конкретных моноидов (просто возвращаем себя)
+        # Stub the remaining multiplication: these tests only exercise zero and unit.
         return self
 
 def test_zero():
+    """The monoid zero uses the zero sentinel and must not be mistaken for the unit."""
     z = ConcreteMonoid.zero()
     assert z.is_zero()
     assert not z.is_one()
@@ -24,6 +25,7 @@ def test_zero():
     assert z.multiplicity == -1
 
 def test_one():
+    """The empty product is the unit, distinguished by its own sentinel."""
     o = ConcreteMonoid.one()
     assert o.is_one()
     assert not o.is_zero()
@@ -31,6 +33,7 @@ def test_one():
     assert o.multiplicity == -2
 
 def test_zero_one_equality():
+    """Zero and unit differ, while repeated constructions of each compare equal."""
     z = ConcreteMonoid.zero()
     o = ConcreteMonoid.one()
     assert z != o
@@ -38,6 +41,7 @@ def test_zero_one_equality():
     assert o == ConcreteMonoid.one()
 
 def test_hash():
+    """Equal sentinel objects have equal hashes; the two sentinels remain distinct."""
     z1 = ConcreteMonoid.zero()
     z2 = ConcreteMonoid.zero()
     o1 = ConcreteMonoid.one()
@@ -47,6 +51,7 @@ def test_hash():
     assert hash(z1) != hash(o1)
 
 def test_multiplication_with_zero():
+    """Zero absorbs multiplication from either side, including zero times zero."""
     z = ConcreteMonoid.zero()
     any_m = ConcreteMonoid([1,2])
     assert (z * any_m).is_zero()
@@ -54,6 +59,7 @@ def test_multiplication_with_zero():
     assert (z * z).is_zero()
 
 def test_multiplication_with_one():
+    """The unit returns the other operand unchanged on either side."""
     o = ConcreteMonoid.one()
     m = ConcreteMonoid([1,2])
     assert (o * m) is m

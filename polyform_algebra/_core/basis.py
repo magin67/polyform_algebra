@@ -12,20 +12,27 @@ class Basis:
         self.transitions = {}  # словарь для хранения матриц перехода
 
     def add_element(self, elem):
+        """Append a new basis element and invalidate all incident transitions."""
         if elem not in self._index:
             self._index[elem] = len(self.elements)
             self.elements.append(elem)
-            # При добавлении элемента все существующие связи становятся недействительными
-            self.transitions.clear()
+            self._invalidate_transitions()
 
     def remove_element(self, elem):
+        """Remove an element and invalidate links in both directions; absent is a no-op."""
         if elem in self._index:
             idx = self._index.pop(elem)
             del self.elements[idx]
-            # Обновляем индексы
+            # Rebuild indices after removal.
             for i, e in enumerate(self.elements):
                 self._index[e] = i
-            self.transitions.clear()
+            self._invalidate_transitions()
+
+    def _invalidate_transitions(self):
+        """Remove both directions of every link affected by a basis change."""
+        for other in list(self.transitions):
+            other.transitions.pop(self, None)
+        self.transitions.clear()
 
     def create_basis_from_frames(self, index=0):
         """

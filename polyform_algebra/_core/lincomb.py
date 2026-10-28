@@ -292,15 +292,27 @@ class LinearCombination(ABC):
         return result
 
     def exp(self, max_terms=None):
-        result = self.zero()
-        term = self.one()
-        k = 0
-        while True:
-            term = term * self
-            if term.is_zero(): break
-            k += 1
-            term = term * (1/k)
-            result = result + term
-            if max_terms is not None and k >= max_terms: break
-        return result
+        """Return exp(c)*sum(N**k/k!) for scalar c and positive-grade N.
 
+        N is nilpotent in the finite exterior algebra. max_terms, if supplied,
+        limits its positive powers (zero keeps only the scalar exponential).
+        The support size bounds the series even when numerical rounding occurs.
+        """
+        from math import exp
+
+        if max_terms is not None and (isinstance(max_terms, bool) or
+                                     not isinstance(max_terms, int) or max_terms < 0):
+            raise ValueError("max_terms must be a non-negative integer or None")
+        scalar = sum(c for t, c in self.terms.items() if t.is_one())
+        positive = self.__class__({t: c for t, c in self.terms.items() if not t.is_one()})
+        result = self.one()
+        term = self.one()
+        limit = len(positive.get_elements())
+        if max_terms is not None:
+            limit = min(limit, max_terms)
+        for k in range(1, limit + 1):
+            term = (term * positive) / k
+            if term.is_zero():
+                break
+            result = result + term
+        return exp(scalar) * result

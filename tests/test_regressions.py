@@ -1,7 +1,7 @@
-"""Регрессии вводной серии PMG, заметки 8–10.
+"""Regressions for PMG introductory notes 8-10.
 
-Источник: https://github.com/magin67/pmg-notes/tree/v5/pmg-library/ru/Введение
-Граница и правило Лейбница; область поляризации; фиксированный носитель метрики.
+Source: https://github.com/magin67/pmg-notes/tree/v5/pmg-library/ru/Введение
+Boundary and Leibniz rules, polarization limits and fixed metric support.
 """
 import networkx as nx
 import numpy as np
@@ -10,9 +10,9 @@ from polyform_algebra import Element, Point, Vector, Simplex, Polysimplex, Polyf
 
 
 def test_scalar_unit_and_zero():
-    """Скалярная единица не равна нулю: 1·a=a, 0·a=0 и ∂a=1.
+    """The scalar unit obeys 1*a=a and d(a)=1, whereas 0*a=0.
 
-    Регрессия: канонизация превращала пустое произведение (единицу) в ноль."""
+    Regression: canonicalization used to turn the empty product into zero."""
     a = Point("a")
     one = Simplex.one()
     zero = Simplex.zero()
@@ -26,7 +26,7 @@ def test_scalar_unit_and_zero():
 
 @pytest.mark.parametrize("sign", [1, -1])
 def test_boundary_expansion_and_orientation(sign):
-    """Проверяем (ab)=b−a, (abc)=bc−ac+ab и ∂²=0 при обеих ориентациях."""
+    """Check (ab)=b-a, (abc)=bc-ac+ab and d^2=0 for both orientations."""
     a, b, c = Point.create_list("abc")
     assert Simplex([(a,b)], sign=sign).to_polysimplex() == sign * (b-a)
     assert Simplex([(a,b,c)], sign=sign).to_polysimplex() == sign * (b*c-a*c+a*b)
@@ -35,9 +35,9 @@ def test_boundary_expansion_and_orientation(sign):
 
 
 def test_expansion_preserves_vectors_and_products():
-    """Раскрытие границ сохраняет произведение и не обнуляет атомарный вектор.
+    """Boundary expansion preserves products and atomic vectors.
 
-    Нулевая граница вектора не означает, что сам вектор равен нулю."""
+    A vector with zero boundary is not itself zero."""
     a,b,c,d = Point.create_list("abcd")
     v = Vector("v")
     assert Simplex([v]).to_polysimplex() == v.as_polysimplex()
@@ -46,9 +46,9 @@ def test_expansion_preserves_vectors_and_products():
 
 
 def test_boundary_leibniz_and_affine_weight():
-    """Проверяем ∂(XY)=(∂X)Y+(−1)^grade(X)X∂Y и ∂e=ε(e).
+    """Check d(XY)=d(X)Y+(-1)^grade(X)X d(Y) and d(e)=epsilon(e).
 
-    Наличие границы среди множителей не обнуляет границу всего произведения."""
+    A boundary factor does not force the boundary of the whole product to vanish."""
     a,b,c,d = Point.create_list("abcd")
     edge = Simplex([(c,d)])
     assert Simplex([a,(c,d)]).boundary() == edge.as_polysimplex()
@@ -59,16 +59,16 @@ def test_boundary_leibniz_and_affine_weight():
 
 
 def test_compact_first_grade_polarization():
-    """Поляризация не зависит от записи вектора: (ab) и b−a дают один результат."""
+    """Polarization agrees for the compact vector (ab) and its expansion b-a."""
     a,b,c = Point.create_list("abc")
     assert Simplex([(a,b)]) @ Simplex([(a,c)]) == (b-a) @ (c-a)
 
 
 @pytest.mark.parametrize("left,right", [(2,2),(1,2),(0,0)])
 def test_unsupported_scalar_product_grades_raise(left,right):
-    """Фиксируем ограничение текущего API: @ поддерживает только первый грейд.
+    """The current @ API explicitly rejects arguments outside homogeneous grade one.
 
-    Это проверка явного отказа, а не математического запрета других грейдов."""
+    This is an implementation limit, not a mathematical prohibition."""
     points = Point.create_list("abc")
     x = Simplex(points[:left])
     y = Simplex(points[:right])
@@ -77,9 +77,9 @@ def test_unsupported_scalar_product_grades_raise(left,right):
 
 
 def test_isolated_vertices_survive_matrix_and_algebra():
-    """Вершина 2 изолирована, но должна сохранять строку и столбец лапласиана.
+    """Isolated vertex 2 retains its Laplacian row and column.
 
-    Даже обнуление коэффициентов не должно стирать исходный набор вершин."""
+    Even cancellation of every coefficient must preserve the vertex context."""
     graph = nx.Graph()
     graph.add_nodes_from([0,1,2])
     graph.add_edge(0,1)
@@ -96,9 +96,9 @@ def test_isolated_vertices_survive_matrix_and_algebra():
 
 
 def test_edgeless_graph_matrix():
-    """Для трёх изолированных вершин L=0 и exp(L)=1, но остовов нет.
+    """Three isolated vertices give L=0 and exp(L)=1 but no spanning tree.
 
-    Поэтому матрица остаётся 3×3, а нормировка на остовной коэффициент запрещена."""
+    The matrix stays 3 by 3 and division by the spanning coefficient is rejected."""
     lap = Polyform.from_networkx(nx.empty_graph(3))
     np.testing.assert_array_equal(lap.to_matrix()[0],np.zeros((3,3)))
     assert lap.exp() == Polyform.one()
@@ -107,7 +107,7 @@ def test_edgeless_graph_matrix():
 
 
 def test_laplacian_round_trip_with_isolated_vertex():
-    """Переход матрица → полиформа → матрица сохраняет нулевую строку изолированной вершины."""
+    """Matrix-to-polyform-to-matrix conversion retains an isolated zero row."""
     points=Point.create_list("abc")
     matrix=np.array([[1,-1,0],[-1,1,0],[0,0,0]])
     lap=Polyform.from_laplacian(matrix,points)
@@ -115,9 +115,9 @@ def test_laplacian_round_trip_with_isolated_vertex():
 
 
 def test_disconnected_metric_rejects_normalization_but_has_potential():
-    """Два отдельных ребра не имеют остова: τ(M)=0, но τ(M·[(12)]²)=1.
+    """Two separate edges have tau(M)=0, but tau(M*[(12)]^2)=1.
 
-    Связь 1–2 соединяет компоненты в дерево. Потенциал определён, деление на τ(M) — нет."""
+    The added edge joins them into a tree; potential exists but normalization does not."""
     graph=nx.Graph([(0,1),(2,3)])
     lap,p=Polyform.from_networkx(graph,return_points="list")
     metric=lap.exp()
@@ -129,13 +129,13 @@ def test_disconnected_metric_rejects_normalization_but_has_potential():
 
 
 def test_connected_metrics_and_edge_deletion():
-    """У пути 0–1–2 сопротивление концов равно 2; удаление ребра разрушает связность.
+    """A unit path has endpoint resistance two; deleting an edge disconnects it.
 
-    Дополнительно проверяем линейность потенциала и запрет измерений вне набора вершин."""
+    Also check potential linearity and rejection of vertices outside the metric."""
     lap,p=Polyform.from_networkx(nx.path_graph(3),return_points="list")
     metric=lap.exp()
     assert metric.norm(quForm([(p[0],p[2])])) == 2
-    # Линейность: потенциал единицы равен 1, формы концов пути — 2.
+    # Linearity: the unit potential is 1 and the endpoint-form potential is 2.
     assert metric.potential(Polyform.one()+quForm([(p[0],p[2])])) == 3
     with pytest.raises(ValueError,match="outside"):
         metric.norm(quForm([(p[0],Point("outside"))]))
@@ -145,9 +145,9 @@ def test_connected_metrics_and_edge_deletion():
 
 
 def test_triangle_metric_and_higher_quadratic_form():
-    """Эталон K3: сопротивление 2/3, скалярное произведение 1/3, норма границы 1/3.
+    """K3 gives resistance 2/3, scalar product 1/3 and boundary norm 1/3.
 
-    Последняя равна det([[2/3,1/3],[1/3,2/3]]); это квадрат удвоенной площади."""
+    The latter is det([[2/3,1/3],[1/3,2/3]]), the square of twice the area."""
     lap,p=Polyform.from_networkx(nx.complete_graph(3),return_points="list")
     metric=lap.exp()
     assert metric.norm(quForm([(p[0],p[1])])) == pytest.approx(2/3)
@@ -156,16 +156,16 @@ def test_triangle_metric_and_higher_quadratic_form():
 
 
 def test_quadratic_zero_is_not_unit():
-    """Нулевая форма и единичная форма различаются и как объекты, и как ключи множества."""
+    """Zero and unit quadratic forms remain distinct as objects and set keys."""
     assert quForm.zero() != quForm.one()
     assert len({quForm.zero(),quForm.one()}) == 2
     assert Polyform.zero() != Polyform.one()
 
 
 def test_context_survives_powers_and_connected_variation():
-    """Степени нулевой полиформы сохраняют вершины; добавление двух рёбер создаёт путь.
+    """Powers preserve isolated vertices; adding two edges creates a unit path.
 
-    Проверяем также, что построение нового графа не изменяет исходную полиформу."""
+    Building the new graph must not mutate the original zero polyform."""
     lap,p=Polyform.from_networkx(nx.empty_graph(3),return_points="list")
     assert (lap**0).vertices == lap.vertices
     assert (lap**2).vertices == lap.vertices
@@ -175,9 +175,9 @@ def test_context_survives_powers_and_connected_variation():
 
 
 def test_compact_higher_grade_polarization_is_not_silently_zero():
-    """Неподдерживаемая поляризация границы треугольника должна сообщить об ограничении.
+    """Unsupported triangle polarization raises an explicit limitation error.
 
-    Раньше X@X молча давало ноль, хотя метрическая оценка в K3 равна 1/3."""
+    Previously X@X silently returned zero although its K3 metric norm is 1/3."""
     a,b,c=Point.create_list("abc")
     x=Simplex([(a,b,c)])
     with pytest.raises(ValueError,match="grade 1"):
@@ -185,12 +185,12 @@ def test_compact_higher_grade_polarization_is_not_silently_zero():
 
 
 def test_oriented_products_and_leibniz_against_expansion():
-    """Сверяем компактные границы с раскрытием через вершины для 1600 пар.
+    """Compare compact boundaries with atomic expansions for 1600 ordered pairs.
 
-    Перестановки вершин проверяют ориентацию; раскрытие проверяет слияние границ."""
+    Vertex permutations check orientation; expansion independently checks merging."""
     from itertools import permutations, product
     points=Point.create_list("abcd")
-    # 4 точки + 12 ориентированных пар + 24 ориентированные тройки = 40 объектов.
+    # 4 points + 12 oriented pairs + 24 oriented triples = 40 objects.
     factors=[Simplex([x]) for x in points]
     factors += [Simplex([x]) for k in (2,3) for x in permutations(points,k)]
 
@@ -205,9 +205,9 @@ def test_oriented_products_and_leibniz_against_expansion():
 
 @pytest.mark.parametrize("graph", [nx.path_graph(5),nx.cycle_graph(4),nx.complete_graph(4)])
 def test_graph_metric_matches_independent_matrix_computation(graph):
-    """Сверяем алгебру с независимым матричным расчётом на взвешенных P5, C4, K4.
+    """Compare weighted P5, C4 and K4 with independent matrix calculations.
 
-    По Кирхгофу τ — минор лапласиана; сопротивление R_ij=Gr_ii+Gr_jj−2Gr_ij."""
+    Kirchhoff gives tau as a Laplacian cofactor and R_ij=Gr_ii+Gr_jj-2Gr_ij."""
     for i,(u,v) in enumerate(graph.edges()):
         graph[u][v]["weight"]=i+1
     lap,points=Polyform.from_networkx(graph,return_points="list")
@@ -220,7 +220,7 @@ def test_graph_metric_matches_independent_matrix_computation(graph):
         expected[u,v]-=w
         expected[v,u]-=w
     np.testing.assert_allclose(matrix,expected)
-    # Псевдообратная даёт матрицу Грина независимо от операций с полиформами.
+    # The pseudoinverse gives the Green matrix independently of polyform operations.
     green=np.linalg.pinv(expected)
     metric=lap.exp()
     assert metric.potential(quForm.one()) == pytest.approx(np.linalg.det(expected[1:,1:]))

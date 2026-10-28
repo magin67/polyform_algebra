@@ -148,22 +148,31 @@ class Polyform(Polysimplex):
         return f"Polyform({self.__str__()})"
 
     def is_equivalent(self, other, tolerance=1e-10):
-        # Проверяет эквивалентность двух полиформ с точностью до нулевых комбинаций
-        if not isinstance(other, Polyform): return False
-        diff = self - other
-        # Если diff уже нулевая, то эквивалентны
-        if diff.is_zero(): return True
-        # Получаем все вершины из разности
-        vertices = sorted(diff.get_elements(kind='points'), key=str)
-        # Генерируем все базисные векторы a_i - a_j
-        for i in range(len(vertices)):
-            for j in range(i+1, len(vertices)):
-                plf = quForm([(vertices[i], vertices[j])])
-                prod = diff * plf
-                if not prod.is_zero():
-                    print("prod, diff, plf = ", prod, diff, plf)
-                    return False
-        return True
+        """Compare quadratic forms after expanding boundaries into atomic blades.
+
+        For X = sum(x_I e_I), its square has coefficients x_I*x_J.
+        These internal coefficient pairs are only a comparison device: they do
+        not add general bilinear objects to the public quadratic algebra.
+        Unlike multiplication probes, this also distinguishes top-grade forms
+        and scalars from zero. Element frames are not expanded implicitly.
+        """
+        if tolerance < 0 or not np.isfinite(tolerance):
+            raise ValueError("Tolerance must be finite and non-negative")
+        if not isinstance(other, Polyform):
+            return False
+        coefficients = Counter()
+        for form, direction in ((self, 1), (other, -1)):
+            for term, weight in form.terms.items():
+                # Retain orientation until the outer square is formed.
+                expansion = Simplex(list(term.components)).to_polysimplex()
+                items = list(expansion.terms.items())
+                for i, (left, a) in enumerate(items):
+                    for j in range(i, len(items)):
+                        right, b = items[j]
+                        key = frozenset((left, right))
+                        factor = 1 if i == j else 2
+                        coefficients[key] += direction * weight * factor * a * b
+        return all(abs(value) <= tolerance for value in coefficients.values())
 
     # --- Методы метрики ---
     def potential(self, obj_polyform):
@@ -363,12 +372,22 @@ class Polyform(Polysimplex):
         return result
 
     def exp(self, tolerance=1e-10):
-        # Для полиформ: экспонента = ∏ (1 + coeff * term) для всех термов
+        """Exponentiate commuting simple squares, including a scalar component.
+
+        Each supported positive-grade term is decomposable, so its square
+        vanishes and exp(c*f) = 1+c*f. The scalar unit is not nilpotent and
+        contributes the ordinary real exponential instead.
+        """
+        from math import exp
+
+        if tolerance < 0 or not np.isfinite(tolerance):
+            raise ValueError("Tolerance must be finite and non-negative")
+        scalar = self.terms.get(quForm.one(), 0)
         result = Polyform(Polyform.one(), vertices=self._vertices)
         for term, coeff in self.terms.items():
-            # Создаём (1 + coeff * term)
-            one = Polyform.one()
-            part = Polyform({term: coeff})
-            factor = one + part   # сложение двух полиформ
-            result = result * factor
-        return result
+            if term.is_one():
+                continue
+            if not (term * term).is_zero():
+                raise ValueError("Factorized exponential requires square-zero terms")
+            result = result * (Polyform.one() + Polyform({term: coeff}))
+        return exp(scalar) * result
