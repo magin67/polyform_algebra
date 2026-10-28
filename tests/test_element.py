@@ -20,6 +20,10 @@ def test_point_mul():
 @pytest.mark.parametrize("element_type", [Point, Vector])
 @pytest.mark.parametrize("same_instance", [True, False])
 def test_equal_elements_add_coefficients(element_type, same_instance):
+    """Равные элементы должны складываться с суммированием коэффициентов: u+u=2u.
+
+    Проверяем один объект и два равных экземпляра, отдельно для точек и векторов.
+    Раньше словарь {left: 1, right: 1} терял одно из одинаковых слагаемых."""
     left = element_type("u")
     right = left if same_instance else element_type("u")
 
@@ -31,6 +35,7 @@ def test_equal_elements_add_coefficients(element_type, same_instance):
 
 @pytest.mark.parametrize("element_type", [Point, Vector])
 def test_distinct_elements_add_preserves_terms(element_type):
+    """Исправление u+u не должно сливать разные элементы: u+v содержит два слагаемых."""
     left, right = element_type.create_list(["u", "v"])
 
     assert (left + right).terms == {

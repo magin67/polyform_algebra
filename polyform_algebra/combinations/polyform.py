@@ -81,6 +81,10 @@ class Polyform(Polysimplex):
         return tuple(sorted(self.get_elements(), key=str))
 
     def _with_context(self, result, other=None):
+        """Переносит вершины, которые могут исчезнуть из ненулевых слагаемых.
+
+        Создаём новый объект, чтобы арифметика не меняла контекст операндов.
+        """
         if result is NotImplemented: return result
         explicit = self._vertices is not None or getattr(other, '_vertices', None) is not None
         if not explicit: return result
@@ -110,6 +114,10 @@ class Polyform(Polysimplex):
         return self._with_context(super().extract_grade(grade))
 
     def _spanning_form(self):
+        """Выбирает T_n по всем вершинам, а не по текущему старшему грейду.
+
+        У несвязного графа старший грейд ниже n−1; его коэффициент не равен τ.
+        """
         # Старое базисное представление с атомарными формами имеет другой объём.
         if any(not term.is_one() and term.kind() != 'boundary' for term in self.terms):
             return None
