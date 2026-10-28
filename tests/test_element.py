@@ -17,6 +17,28 @@ def test_point_mul():
     smp = a * b
     assert smp == Simplex([a, b])
 
+@pytest.mark.parametrize("element_type", [Point, Vector])
+@pytest.mark.parametrize("same_instance", [True, False])
+def test_equal_elements_add_coefficients(element_type, same_instance):
+    left = element_type("u")
+    right = left if same_instance else element_type("u")
+
+    result = left + right
+
+    assert result.terms == {Simplex([left]): 2}
+    assert result == 2 * left
+
+
+@pytest.mark.parametrize("element_type", [Point, Vector])
+def test_distinct_elements_add_preserves_terms(element_type):
+    left, right = element_type.create_list(["u", "v"])
+
+    assert (left + right).terms == {
+        Simplex([left]): 1,
+        Simplex([right]): 1,
+    }
+
+
 # ---------- Vector ----------
 
 def test_vector_comps():

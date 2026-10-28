@@ -72,7 +72,8 @@ class Element(Simplex):
     def __add__(self, other):
         if not isinstance(other, Element):
             return NotImplemented
-        return Polysimplex({self: 1, other: 1})
+        # Список сохраняет оба слагаемых до сложения их коэффициентов.
+        return Polysimplex([(self, 1), (other, 1)])
 
     def __sub__(self, other):
         return self + (-other)
