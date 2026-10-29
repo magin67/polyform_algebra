@@ -48,10 +48,11 @@ f_v = v[0]@v[0]
 
 v.add_frame(frame=v.in_basis(0, B_points, B_eigen), basis=B_eigen)
 
-f_veig = v[1].to_quadratic_form(B_eigen)
+# The eigenbasis diagonalizes this metric, so mixed terms do not affect the norm.
+f_veig = v[1].to_diagonal_quform(B_eigen)
 
 print("v = (d - a) in eig: ", v[1])
-print("[v]^2 in eig: ", f_veig)
+print("Diagonal part of [v]^2 in eig: ", f_veig)
 
 # Метрика:
 

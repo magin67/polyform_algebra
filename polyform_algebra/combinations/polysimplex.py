@@ -222,36 +222,65 @@ class Polysimplex(LinearCombination):
                 new_terms[s] = c
         return self._from_terms(new_terms)
     
-    def to_quadratic_form(self, basis, tolerance=1e-10):
+    def to_diagonal_quform(self, basis, tolerance=1e-10):
+        """Return the diagonal part sum(c_i**2 * [e_i]**2) for x=sum(c_i*e_i).
+
+        Accept zero or atomic grade-one coordinates in the supplied Basis,
+        declared orthonormal by the caller. No coordinate transformation or
+        frame expansion is performed. The declaration is trusted: this method
+        has no metric with which to verify orthogonality or normalization.
+
+        This is not polarization or the full formal square x @ x: mixed terms
+        are omitted. The result can replace the square for a metric evaluation
+        only when that metric annihilates the mixed terms in this basis. It is
+        not a substitute for the square in arbitrary algebraic operations.
+
+        tolerance controls rounding of squared coefficients; the usual Polyform
+        constructor rounding also applies. Negative coordinates are permitted.
         """
-        Преобразует полисимплекс (линейную комбинацию векторов) в полиформу,
-        предполагая, что базис ортонормирован. 
-        Для каждого терма Simplex([v]) с коэффициентом c добавляет слагаемое c^2 * quForm([v]).
-        """
+        from math import isfinite
+        from numbers import Real
+        from .._core.basis import Basis
+        from ..objects.element import Element
         from .polyform import Polyform
         from ..objects.quform import quForm
 
+        if isinstance(self, Polyform) or issubclass(self.term_type, quForm):
+            raise TypeError("Expected external coordinates, not quadratic forms")
+        if not isinstance(basis, Basis):
+            raise TypeError("basis must be a Basis")
         if not basis.is_orthonormal:
-            raise ValueError("Метод требует ортонормированного базиса")
-        # Для единицы (пустой полисимплекс) возвращаем единичную полиформу? Пока ноль.
-        if self.is_zero(): return Polyform.zero()
+            raise ValueError("Basis must be declared orthonormal")
+        if any(not isinstance(elem, Element) for elem in basis.elements):
+            raise TypeError("Basis must contain atomic Elements")
+        if len(set(basis.elements)) != len(basis.elements):
+            raise ValueError("Basis elements must be distinct")
+        if (isinstance(tolerance, bool) or not isinstance(tolerance, Real) or
+                not isfinite(tolerance) or tolerance < 0):
+            raise ValueError("Tolerance must be finite and non-negative")
         new_terms = {}
         for term, coeff in self.terms.items():
-            # Ожидаем, что term — Simplex из одного элемента (вектора)
-            if len(term.components) != 1 or isinstance(term.components[0], tuple):
-                raise TypeError("Терм должен быть атомарным симплексом (один вектор)")
-            vec = term.components[0]
-            # Коэффициент в квадрате
-            c2 = coeff * coeff
-            if abs(c2) < tolerance: continue
-            qf = quForm([vec])
-            new_terms[qf] = new_terms.get(qf, 0) + c2
-        # Округляем коэффициенты
-        for qf in list(new_terms.keys()):
-            val = new_terms[qf]
-            rounded = self._round_value(val, tolerance)
-            if rounded == 0:
-                del new_terms[qf]
-            else:
-                new_terms[qf] = rounded
+            if (isinstance(term, quForm) or term.grade() != 1 or
+                    len(term.components) != 1 or
+                    not isinstance(term.components[0], Element)):
+                raise TypeError("Expected atomic grade-one coordinates; expand boundaries first")
+            elem = term.components[0]
+            if elem not in basis:
+                raise ValueError(f"Element {elem} does not belong to the supplied basis")
+            if not isinstance(coeff, Real):
+                raise TypeError("Coordinates must be real numbers")
+            squared = coeff * coeff
+            if not isfinite(squared):
+                raise ValueError("Squared coordinates must be finite")
+            rounded = self._round_value(squared, tolerance)
+            if rounded:
+                new_terms[quForm([elem])] = rounded
         return Polyform(new_terms)
+
+    def to_quadratic_form(self, basis, tolerance=1e-10):
+        """Compatibility alias for to_diagonal_quform; this is not a full square.
+
+        Retains the old signature and delegates all validation and calculation
+        to the explicitly named method. Use x @ x for supported polarization.
+        """
+        return self.to_diagonal_quform(basis, tolerance=tolerance)
