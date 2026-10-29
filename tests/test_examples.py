@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-EXAMPLES = sorted(path.stem for path in (ROOT / "examples").glob("*.py")
+EXAMPLES = sorted(".".join(path.relative_to(ROOT / "examples").with_suffix("").parts)
+                  for path in (ROOT / "examples").rglob("*.py")
                   if path.stem != "__init__")
 
 

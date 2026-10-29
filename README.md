@@ -51,6 +51,11 @@ assert Polyform.zero().exp() == Polyform.one()
 | `examples.eig_polyform_exam` | Путь: переход в собственный базис и одинаковая норма в двух представлениях |
 | `examples.eigen_polyform` | Цикл из пяти вершин: потенциалы и нормы в двух представлениях |
 | `examples.petersen_exp` | Экспонента графа Петерсена и остовной коэффициент |
+| `examples.introductory.note06_single_edge` | Заметка 6: усиление одной связи треугольника |
+| `examples.introductory.note07_two_edges` | Заметка 7: совместное усиление двух связей |
+
+Пошаговое пояснение и ожидаемые результаты:
+[вариации связей треугольника на Python](docs/INTRODUCTORY_VARIATIONS.md).
 
 ## Область реализации
 
