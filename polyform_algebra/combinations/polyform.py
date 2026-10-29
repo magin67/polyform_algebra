@@ -1,6 +1,7 @@
 # @title Полиформа - линейная комбинация форм
 
 from collections import Counter
+from numbers import Real
 import numpy as np
 
 from .polysimplex import Polysimplex
@@ -18,45 +19,121 @@ class Polyform(Polysimplex):
         return cls({quForm.one(): 1})
 
     @classmethod
-    # генерация полиформы на основе графа, созданного в netwokx
     def from_networkx(cls, G, return_points=None):
-        nodes = sorted(G.nodes())
-        points = {node: Point(str(node)) for node in nodes}
+        """Import a loop-free undirected network with finite non-negative weights.
+
+        Missing weights mean one; zero weights are absent connections. Parallel
+        conductances are summed. Comparable node labels retain sorted order;
+        otherwise insertion order is used. The returned mapping/list identifies
+        points even when different labels have the same string representation.
+        Signed algebraic expressions should be built directly, not imported here.
+        """
+        import networkx as nx
+
+        if not isinstance(G, nx.Graph):
+            raise TypeError("Expected a NetworkX graph")
+        if G.is_directed():
+            raise ValueError("Directed graphs are not supported by this network constructor")
+        if return_points not in (None, 'dict', 'list'):
+            raise ValueError("return_points must be None, 'dict' or 'list'")
+        nodes = list(G.nodes())
+        try:
+            nodes = sorted(nodes)
+        except TypeError:
+            pass  # Mixed label types need not define a common ordering.
+
+        # Element equality uses names: reserve all original names before adding
+        # suffixes so that 1, '1' and '1#1' cannot accidentally merge vertices.
+        names = [str(node) for node in nodes]
+        reserved = set(names)
+        used = set()
+        points = {}
+        for node, name in zip(nodes, names):
+            candidate = name
+            suffix = 1
+            while not candidate or candidate in used:
+                candidate = f"{name}#{suffix}"
+                suffix += 1
+                if candidate in reserved:
+                    candidate = ''
+            used.add(candidate)
+            points[node] = Point(candidate)
+
         terms = Counter()
         for u, v, data in G.edges(data=True):
+            if u == v:
+                raise ValueError("Self-loops are not supported by this network constructor")
             weight = data.get('weight', 1)
-            if weight != 0:
-                a, b = points[u], points[v]
-                form = quForm([(a, b)])
+            if isinstance(weight, (bool, np.bool_)) or not isinstance(weight, Real):
+                raise TypeError("Edge weights must be real numbers")
+            try:
+                weight = float(weight)
+            except OverflowError as exc:
+                raise ValueError("Edge weights must be finite floating-point values") from exc
+            if not np.isfinite(weight) or weight < 0:
+                raise ValueError("Edge weights must be finite and non-negative")
+            if weight:
+                form = quForm([(points[u], points[v])])
                 terms[form] += weight
+                if not np.isfinite(terms[form]):
+                    raise ValueError("Sum of parallel conductances must be finite")
         poly = cls(terms, vertices=points.values())
         if return_points == 'dict':
             return poly, points
-        elif return_points == 'list':
-            return poly, [points[node] for node in nodes]
-        else:
-            return poly
-    
+        if return_points == 'list':
+            return poly, list(points.values())
+        return poly
+
     @classmethod
     def from_laplacian(cls, laplacian_matrix, vertex_labels, tolerance=1e-10):
-        L = np.asarray(laplacian_matrix)
+        """Import a real undirected network Laplacian in the supplied Point order.
+
+        Require a finite square symmetric matrix, non-positive off-diagonal
+        entries and zero row sums. All checks use an absolute tolerance (no
+        relative tolerance). Small asymmetry is averaged and positive roundoff
+        off-diagonal entries are clipped to zero. Conductances at or below
+        tolerance are omitted. Empty and disconnected
+        networks are valid. Labels must be distinct Point objects.
+        """
+        if (isinstance(tolerance, (bool, np.bool_)) or
+                not isinstance(tolerance, Real) or
+                not np.isfinite(tolerance) or tolerance < 0):
+            raise ValueError("Tolerance must be finite and non-negative")
+        try:
+            L = np.asarray(laplacian_matrix)
+        except (ValueError, TypeError) as exc:
+            raise ValueError("Matrix must be a rectangular two-dimensional array") from exc
+        if L.ndim != 2 or L.shape[0] != L.shape[1]:
+            raise ValueError("Matrix must be two-dimensional and square")
+        if L.dtype.kind not in 'iuf':
+            raise TypeError("Matrix entries must be real numbers")
+        L = L.astype(float)
+        if not np.all(np.isfinite(L)):
+            raise ValueError("Matrix entries must be finite")
         n = L.shape[0]
-        if L.shape[1] != n:
-            raise ValueError("Matrix must be square")
-        if len(vertex_labels) != n:
+        labels = list(vertex_labels)
+        if len(labels) != n:
             raise ValueError("Number of vertex labels must match matrix size")
-        if not np.allclose(L, L.T, atol=tolerance):
+        if any(not isinstance(label, Point) for label in labels):
+            raise TypeError("Vertex labels must be Point objects")
+        if len(set(labels)) != n or len({str(label) for label in labels}) != n:
+            raise ValueError("Vertex labels must have distinct identities and names")
+        if not np.allclose(L, L.T, atol=tolerance, rtol=0):
             raise ValueError("Matrix must be symmetric")
+        off_diagonal = L[~np.eye(n, dtype=bool)]
+        if np.any(off_diagonal > tolerance) or np.any(np.diag(L) < -tolerance):
+            raise ValueError("Laplacian conductances must be non-negative")
+        with np.errstate(over='ignore', invalid='ignore'):
+            row_sums = L.sum(axis=1)
+        if not np.all(np.isfinite(row_sums)) or not np.all(np.abs(row_sums) <= tolerance):
+            raise ValueError("Laplacian row sums must be zero")
         terms = Counter()
         for i in range(n):
             for j in range(i+1, n):
-                weight = -L[i, j]
-                if abs(weight) > tolerance:
-                    a, b = sorted([vertex_labels[i], vertex_labels[j]], key=str)
-                    form = quForm([(a, b)])
-                    if not form.is_zero():
-                        terms[form] += weight
-        return cls(terms, vertices=vertex_labels)
+                weight = max(0.0, -(L[i, j] / 2 + L[j, i] / 2))
+                if weight > tolerance:
+                    terms[quForm([(labels[i], labels[j])])] += weight
+        return cls(terms, vertices=labels)
 
     @classmethod
     def from_pairs(cls, pairs):
