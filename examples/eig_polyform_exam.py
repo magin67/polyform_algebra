@@ -1,70 +1,33 @@
-import networkx as nx
+"""Compare the endpoint norm of a path in vertex and eigenvector coordinates.
 
-from polyform_algebra.objects.element import Point, Vector
-from polyform_algebra.objects.quform import quForm
-from polyform_algebra.combinations.polysimplex import Polysimplex
-from polyform_algebra.combinations.polyform import Polyform
-from polyform_algebra._core.basis import Basis
+Source: https://github.com/magin67/pmg-notes/tree/v5/pmg-library/ru/Введение
+"""
+from math import isclose
+from polyform_algebra import Point, Polyform, quForm
 
-a, b, c, d = Point.create_list(['a', 'b', 'c', 'd'])
 
-# Формы
-f_ab = quForm([(a, b)])
-f_bc = quForm([(b, c)])
-f_ac = quForm([(a, c)])
-f_cd = quForm([(c, d)])
-f_ad = quForm([(a, d)])
+def main():
+    """A unit path of three edges has endpoint resistance three in either basis."""
+    a,b,c,d = Point.create_list("abcd")
+    laplacian = quForm([(a,b)]) + quForm([(b,c)]) + quForm([(c,d)])
+    diagonal, eigenbasis = laplacian.to_eigenbasis()
+    points = eigenbasis.create_basis_from_frames()
+    eigenbasis.link_to(points)
+    vector = d-a
+    coordinates = vector.transform(points, eigenbasis)
+    # The metric is diagonal here; mixed terms do not contribute to this norm.
+    diagonal_square = coordinates.to_diagonal_quform(eigenbasis)
+    original_norm = laplacian.exp().norm(vector @ vector)
+    eigen_norm = diagonal.exp().norm(diagonal_square)
+    print("Eigenbasis Laplacian:", diagonal)
+    print("Expanded Laplacian:", diagonal.expand())
+    print("Endpoint vector coordinates:", coordinates)
+    print("Diagonal square:", diagonal_square)
+    print("Vertex-basis norm:", original_norm)
+    print("Eigenbasis norm:", eigen_norm)
+    assert isclose(original_norm, 3)
+    assert isclose(eigen_norm, original_norm)
 
-f_abc = quForm([(a, b, c)])
 
-f_ab_cd = quForm([(a, b), (c, d)])
-f_bc_da = quForm([(b, c), (d, a)])
-
-# Полиформы
-
-# G_cycle = nx.cycle_graph(5)
-# poly = Polyform.from_networkx(G_cycle)
-
-Cycle3 = Polyform({f_ab: 1, f_bc: 1, f_ac: 1})
-Path4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1})
-Cycle4 = Polyform({f_ab: 1, f_bc: 1, f_cd: 1, f_ad: 1})
-
-PathEig, B_eigen = Path4.to_eigenbasis()
-print("Path.eigen: ", PathEig)
-print("Path.eigen.expand: ", PathEig.expand())
-
-points = list(Path4.get_elements())
-
-print("Basis of v: ", B_eigen)
-
-B_points = B_eigen.create_basis_from_frames(0)
-
-B_eigen.link_to(B_points)
-
-print("Basis of p[0]: ", B_points[0][1])
-
-v = Vector('v', frame = (d - a))
-f_v = v[0]@v[0]
-
-v.add_frame(frame=v.in_basis(0, B_points, B_eigen), basis=B_eigen)
-
-# The eigenbasis diagonalizes this metric, so mixed terms do not affect the norm.
-f_veig = v[1].to_diagonal_quform(B_eigen)
-
-print("v = (d - a) in eig: ", v[1])
-print("Diagonal part of [v]^2 in eig: ", f_veig)
-
-# Метрика:
-
-W = Path4# Cycle3
-Weig = PathEig # W.to_eigenbasis()
-
-Pmetric = W.exp()
-Peigmetric = Weig.exp()
-
-# print("W sizes: ", Pmetric.sizes())
-# print("Eig sizes: ", Peigmetric.sizes())
-
-print("f_v.norm: ", Pmetric.norm(f_v))
-print("f_veig.norm: ", Peigmetric.norm(f_veig))
-# print("PathEig.Exp: ", PathEig.exp())
+if __name__ == "__main__":
+    main()

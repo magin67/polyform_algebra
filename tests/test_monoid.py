@@ -1,9 +1,6 @@
 import pytest
-import sys
-import os
 
 from polyform_algebra._core.monoid import Monoid
-# from abc import ABC
 
 class ConcreteMonoid(Monoid):
     """Concrete test double for the abstract monoid interface."""

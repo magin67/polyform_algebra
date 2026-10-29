@@ -1,18 +1,25 @@
+"""The Petersen graph metric and its spanning-tree coefficient.
+
+Source: https://github.com/magin67/pmg-notes/tree/v5/pmg-library/ru/Введение
+"""
+from math import isclose
 import networkx as nx
-
-from polyform_algebra.combinations.polyform import Polyform
-
-# from polyform_algebra.objects.element import Point, Vector
-# from polyform_algebra.objects.quform import quForm
-
-# from polyform_algebra.combinations.polysimplex import Polysimplex
-# from polyform_algebra.combinations.polyform import Polyform
-# from polyform_algebra._core.basis import Basis
+import numpy as np
+from polyform_algebra import Polyform, quForm
 
 
-G_petersen = nx.petersen_graph()
-L_petersen = Polyform.from_networkx(G_petersen)
+def main():
+    """Compare the exponential's spanning coefficient with a Laplacian cofactor."""
+    laplacian = Polyform.from_networkx(nx.petersen_graph())
+    metric = laplacian.exp()
+    matrix, _ = laplacian.to_matrix()
+    trees = metric.potential(quForm.one())
+    # Kirchhoff's theorem supplies an independent check, without SciPy.
+    expected = np.linalg.det(matrix[1:,1:])
+    assert isclose(trees, expected)
+    print("Grade sizes:", metric.sizes())
+    print("Spanning-tree coefficient:", trees)
 
-W = L_petersen.exp()
 
-print(W.sizes())
+if __name__ == "__main__":
+    main()

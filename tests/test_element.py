@@ -1,12 +1,7 @@
 import pytest
-import sys
-import os
 
 from polyform_algebra.objects.element import Point, Vector
 from polyform_algebra.objects.simplex import Simplex
-# from combinations.polysimplex import Polysimplex
-# from objects.quform import quForm
-# from combinations.polyform import Polyform
 
 # ---------- Points ----------
 a, b, c, d, e, f, g, h, r, x, y, z = Point.create_list(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'r', 'x', 'y', 'z'])

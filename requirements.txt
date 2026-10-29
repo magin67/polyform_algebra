@@ -1,3 +1,2 @@
-numpy
-networkx
-pytest
+# Compatibility entry point for development; dependencies live in pyproject.toml.
+-e .[dev]

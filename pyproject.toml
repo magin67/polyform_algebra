@@ -6,12 +6,23 @@ build-backend = "setuptools.build_meta"
 name = "polyform_algebra"
 version = "0.2.0"
 description = "Algebra for polyforms and simplices"
+readme = "README.md"
 requires-python = ">=3.8"
 dependencies = ["numpy", "networkx"]
 
+[project.optional-dependencies]
+dev = ["pytest>=7", "build>=1.0"]
+
+[project.urls]
+Repository = "https://github.com/magin67/polyform_algebra"
+"PMG notes" = "https://github.com/magin67/pmg-notes/tree/v5/pmg-library"
+
 [tool.setuptools.packages.find]
-# Using default package discovery (current directory)
+include = ["polyform_algebra", "polyform_algebra.*"]
+namespaces = false
 
 [tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "-q"
+addopts = "-ra"

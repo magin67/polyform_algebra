@@ -1,6 +1,4 @@
 import pytest
-import sys
-import os
 
 from polyform_algebra.objects.element import Point, Vector
 from polyform_algebra.objects.simplex import Simplex
