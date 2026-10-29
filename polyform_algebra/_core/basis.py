@@ -1,4 +1,4 @@
-# @title Базис
+"""Ordered bases and links between coordinate representations."""
 
 import numpy as np
 
@@ -6,10 +6,35 @@ from ..objects.simplex import Simplex
 
 class Basis:
     def __init__(self, elements, is_orthonormal=False):
-        self.elements = list(elements)          # список базисных элементов (Point, Vector)
+        self.elements = list(elements)
         self._index = {elem: i for i, elem in enumerate(self.elements)}
-        self.is_orthonormal = is_orthonormal      # флаг, можно вычислить позже
-        self.transitions = {}  # словарь для хранения матриц перехода
+        self.is_orthonormal = is_orthonormal  # Legacy declaration, not a metric check.
+        self.transitions = {}
+
+    def centroid(self, name=None):
+        """Return (mean element, frame) for a nonempty grade-one Element basis.
+
+        The frame has coefficients 1/n and records this Basis. By linearity,
+        its affine weight is sum(epsilon(h_i))/n, not necessarily one in a
+        mixed or vector basis. This is an arithmetic mean, with no metric or
+        isotropic-locality assertion. The mean is not inserted into the basis.
+        See PMG terminology, 'Centroid', and Spaces/Coordinates,
+        'Bi-coordinates and frames'.
+        """
+        from ..objects.element import Element
+        from ..combinations.polysimplex import Polysimplex
+
+        if not self.elements:
+            raise ValueError("centroid requires a nonempty basis")
+        if not all(isinstance(elem, Element) for elem in self.elements):
+            raise TypeError("centroid currently requires grade-one Element objects")
+        if len(set(self.elements)) != len(self.elements):
+            raise ValueError("centroid requires distinct basis elements")
+        coefficient = 1.0 / len(self.elements)
+        frame = Polysimplex([(elem, coefficient) for elem in self.elements])
+        centroid = Element(name=name, frame=frame, affine_weight=frame.affine_weight())
+        centroid.basis_for_frame[0] = self
+        return centroid, frame
 
     def add_element(self, elem):
         """Append a new basis element and invalidate all incident transitions."""

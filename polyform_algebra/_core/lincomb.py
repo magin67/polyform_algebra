@@ -205,7 +205,13 @@ class LinearCombination(ABC):
         mg = self.max_grade()
         return [term for term in self.terms if term.grade() == mg]
 
-    def multiplicity(self): # Кратность комбинации - сумма для всех термов: коэффициент * multiplicity(term)
+    def multiplicity(self):
+        """Legacy coefficient-weighted term metadata, retained unchanged.
+
+        For grade-one Polysimplex objects use affine_weight() instead. The
+        metadata on higher grades and unit/zero sentinels is not an affine
+        weight functional and must not be renamed as such.
+        """
         total = 0.0
         for term, coeff in self.terms.items():
             mult = getattr(term, 'multiplicity', 0)

@@ -6,6 +6,20 @@ from .._core.lincomb import LinearCombination
 from ..objects.simplex import Simplex
 
 class Polysimplex(LinearCombination):
+    def affine_weight(self):
+        """Evaluate epsilon on a grade-one linear element, including zero.
+
+        PMG Spaces/Coordinates, 'Bi-coordinates and frames':
+        epsilon(sum b_i h_i)=sum b_i epsilon(h_i). Computing the scalar
+        boundary also respects oriented boundary terms. This functional is
+        not defined here on scalars, higher exterior grades or formal forms.
+        """
+        if self.term_type is not Simplex:
+            raise TypeError("affine weight applies to linear elements, not forms")
+        if not self.is_zero() and (not self.is_homogeneous() or self.grade() != 1):
+            raise ValueError("affine weight requires exterior grade one")
+        return self.boundary().sum_coeff()
+
     @classmethod
     def zero(cls):
         return cls()

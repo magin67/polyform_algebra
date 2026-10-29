@@ -419,9 +419,9 @@ class Polyform(Polysimplex):
                 frame_terms[elem] = coeff
             frame = Polysimplex(frame_terms)
 
-            # Создаём элемент с этим фреймом и добавляем в базис
-            mult = frame.multiplicity()
-            elem = Element(name='v' + str(k), frame=frame, multiplicity=mult)
+            # Affine weight follows the frame, independently of eigenvalue.
+            weight = frame.affine_weight()
+            elem = Element(name='v' + str(k), frame=frame, affine_weight=weight)
             basis_elements.append(elem)
 
             # Добавляем в полиформу (если собственное число не нулевое), коэффициент = собственное число.

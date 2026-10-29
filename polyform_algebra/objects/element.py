@@ -2,10 +2,20 @@
 from .simplex import Simplex
 from ..combinations.polysimplex import Polysimplex
 
-'''Элементы - точки, векторы и другие объекты 1-го грейда'''
+"""Elements, points and affine vectors of exterior grade one."""
 class Element(Simplex):
-    def __init__(self, name=None, frame=None, multiplicity=1, data=None):
-        super().__init__([self], multiplicity=multiplicity)
+    def __init__(self, name=None, frame=None, multiplicity=None, data=None, *,
+                 affine_weight=None):
+        """Construct an element with an affine weight, defaulting to one.
+
+        ``multiplicity`` is the legacy spelling, retained for compatibility.
+        Supplying both names is allowed only when their values agree.
+        """
+        if affine_weight is None:
+            affine_weight = 1 if multiplicity is None else multiplicity
+        elif multiplicity is not None and multiplicity != affine_weight:
+            raise ValueError("affine_weight and legacy multiplicity must agree")
+        super().__init__([self], multiplicity=affine_weight)
         self.name = name
         self.user_data = data
 
@@ -15,28 +25,42 @@ class Element(Simplex):
         else:
             frames = frame if isinstance(frame, list) else [frame]
             for representation in frames:
-                self._validate_frame(representation, multiplicity)
+                self._validate_frame(representation, affine_weight)
             self.frames = list(frames)
         self.basis_for_frame = [None] * len(self.frames)
 
     @staticmethod
-    def _validate_frame(poly, expected_multiplicity):
+    def _validate_frame(poly, expected_weight):
         if not isinstance(poly, Polysimplex):
             raise TypeError("Frame must be a PolySimplex")
         if not poly.is_homogeneous():
             raise ValueError("Frame is not homogeneous")
         if poly.grade() != 1:
             raise ValueError("Frame grade must be 1")
-        if abs(poly.multiplicity() - expected_multiplicity) > 1e-10:
-            raise ValueError(f"Frame multiplicity must be {expected_multiplicity}, got {poly.multiplicity()}")
+        if abs(poly.affine_weight() - expected_weight) > 1e-10:
+            raise ValueError(f"Frame affine weight must be {expected_weight}, got {poly.affine_weight()}")
+
+    @property
+    def affine_weight(self):
+        """Value of the affine-weight functional epsilon on this element.
+
+        Legacy storage is shared with ``multiplicity``; there is no second
+        independent weight that could diverge from the old API.
+        """
+        return self.multiplicity
+
+    @affine_weight.setter
+    def affine_weight(self, value):
+        self.multiplicity = value
 
     def add_frame(self, frame, basis=None):
-        self._validate_frame(frame, self.multiplicity)
+        self._validate_frame(frame, self.affine_weight)
         self.frames.append(frame)
         self.basis_for_frame.append(basis)
 
-    def boundary(self): # Возвращает полисимплекс, представляющий кратность элемента
-        return Polysimplex({Simplex.one(): self.multiplicity})
+    def boundary(self):
+        """Return the affine weight as a scalar polysimplex: partial x=epsilon(x)."""
+        return Polysimplex({Simplex.one(): self.affine_weight})
 
     def __getitem__(self, idx):
         return self.frames[idx]
@@ -44,13 +68,13 @@ class Element(Simplex):
     def __hash__(self):
         """Match equality across Element subclasses without recursing into Simplex."""
         if self.name:
-            return hash((self.name, self.multiplicity))
+            return hash((self.name, self.affine_weight))
         return hash(id(self))
 
     def __eq__(self, other):
         if not isinstance(other, Element): return False
         if self.name and other.name:
-            return self.name == other.name and self.multiplicity == other.multiplicity
+            return self.name == other.name and self.affine_weight == other.affine_weight
         return self is other
 
     def __str__(self):
@@ -64,7 +88,7 @@ class Element(Simplex):
     def __add__(self, other):
         if not isinstance(other, Element):
             return NotImplemented
-        # Список сохраняет оба слагаемых до сложения их коэффициентов.
+        # Preserve both summands until their coefficients are accumulated.
         return Polysimplex([(self, 1), (other, 1)])
 
     def __sub__(self, other):
@@ -107,19 +131,19 @@ class Element(Simplex):
 
 
 
-'''Точки - это элементы кратности 1'''
 class Point(Element):
+    """An element of affine weight one; no metric or locality is implied."""
     def __init__(self, name=None, frame=None, data=None):
-        super().__init__(name=name, frame=frame, multiplicity=1, data=data)
+        super().__init__(name=name, frame=frame, affine_weight=1, data=data)
 
     @classmethod
     def create_list(cls, names):
         return [cls(name) for name in names]
 
-'''Векторы - это элементы кратности 0'''
 class Vector(Element):
+    """An affine vector, an element of affine weight zero."""
     def __init__(self, name=None, frame=None, data=None):
-        super().__init__(name=name, frame=frame, multiplicity=0, data=data)
+        super().__init__(name=name, frame=frame, affine_weight=0, data=data)
 
     @classmethod
     def create_list(cls, names):

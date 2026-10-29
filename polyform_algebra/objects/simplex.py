@@ -78,19 +78,19 @@ class Simplex(Monoid):
 
     def get_elements(self, kind='all'):
         """
-        Возвращает множество элементов, входящих в симплекс.
-        kind: 'all' - все элементы,
-            'points' - только точки (multiplicity == 1),
-            'vectors' - только векторы (multiplicity == 0).
+        Return atomic elements, optionally filtered by affine weight.
+
+        ``points`` selects weight one, ``vectors`` weight zero; neither
+        selection asserts metric locality or a nonzero numerical norm.
         """
         elements = set()
 
         def add_if_matches(elem):
             if kind == 'all':
                 elements.add(elem)
-            elif kind == 'points' and elem.multiplicity == 1:
+            elif kind == 'points' and elem.affine_weight == 1:
                 elements.add(elem)
-            elif kind == 'vectors' and elem.multiplicity == 0:
+            elif kind == 'vectors' and elem.affine_weight == 0:
                 elements.add(elem)
 
         for comp in self.components:
@@ -249,7 +249,7 @@ class Simplex(Monoid):
         return total
 
     def boundary(self):
-        """Градуированное правило Лейбница; граница каждой границы равна нулю."""
+        """Apply graded Leibniz contraction with the affine-weight functional."""
         from ..combinations.polysimplex import Polysimplex
         if self.is_zero() or self.is_one():
             return Polysimplex.zero()
@@ -259,7 +259,7 @@ class Simplex(Monoid):
             if isinstance(comp, tuple):
                 prefix_grade += len(comp) - 1
                 continue
-            weight = getattr(comp, 'multiplicity', 1)
+            weight = getattr(comp, 'affine_weight', 1)
             if weight:
                 rest = self.components[:i] + self.components[i+1:]
                 term = Simplex(rest) if rest else Simplex.one()

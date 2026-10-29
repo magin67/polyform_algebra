@@ -72,6 +72,45 @@ can use algebra objects. Importing the existing package still loads its existing
 public imports; numerical independence means no exponential computation, not
 that the old package initializer has become lazy.
 
+### Basis centroid and affine-weight terminology
+
+`Basis.centroid(name=None)` now returns `(element, frame)`, where the frame
+is the arithmetic mean of the current basis elements with coefficients 1/n.
+The returned element records that frame and its Basis; the basis is not changed.
+This implementation supports nonempty bases of distinct grade-one `Element`
+objects. Label-only numerical bases need an explicit adapter to algebra elements.
+
+The weight is computed from the frame, epsilon(mean)=sum epsilon(h_i)/n.
+For a point basis it is one, for a vector basis zero; for a mixed basis it
+may be any real value. In the latter cases this method is an arithmetic-mean
+extension of the centroid convention, not a claim that the result is a point.
+No metric, sphere-center or isotropic-locality claim is made.
+
+Use `Element(..., affine_weight=w)` and `element.affine_weight` for the value
+of epsilon. Use `frame.affine_weight()` on a grade-one `Polysimplex`, including
+the zero linear combination. This computes the scalar boundary, respecting
+orientation. Point and Vector use weights one and zero respectively.
+
+The old `Element(..., multiplicity=w)` keyword and `.multiplicity` attribute
+share storage with the new name and remain available without warnings. Passing
+both constructor names with different values raises ValueError. Existing
+`LinearCombination.multiplicity()` also remains unchanged; it is legacy weighted
+term metadata, not a general affine-weight functional. In particular, the
+product metadata on higher-grade simplices and the -1/-2 zero/unit sentinels
+must not be interpreted as affine weights. `affine_weight()` rejects scalars,
+higher grades and formal forms. Fully removing this legacy storage requires a
+separate internal refactor, not a global text substitution.
+
+Terminology follows [PMG terminology, Affine weight and Earlier names](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Foundations/PMG%20terminology.md)
+and [Coordinates, Bi-coordinates and frames](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Spaces/Projections,%20Bi-coordinates,%20and%20Di-coordinates.md).
+The weight functional on a mixed basis is weighted by epsilon(h_i); it is not
+the sum of coordinates unless every basis element has weight one.
+
+Subsequent design discussion also proposes moving space ownership into Basis
+and deriving the space of MatrixAxis from its Basis. This has not been
+implemented here. The metric-free `is_orthonormal` declaration likewise remains
+a compatibility feature; a metric-aware replacement requires its own change.
+
 ## Implemented foundation
 
 ```python
