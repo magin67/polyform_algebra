@@ -72,3 +72,11 @@ class SpanningTreeCentralityResult:
 
     expected_degrees: VertexValues
     scores: Optional[VertexValues]
+
+
+@dataclass(frozen=True, eq=False)
+class EigenvectorCentralityResult:
+    """Largest adjacency eigenvalue and positive vertex scores summing to one."""
+
+    eigenvalue: float
+    scores: VertexValues

@@ -336,6 +336,56 @@ Sources, v5 revision `d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`:
 - [Centroid, Spanning-Tree, and Eigenvector Centralities](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Metric%20parameters/Centroid,%20Spanning-Tree,%20and%20Eigenvector%20Centralities.md), equations (4)-(5), path/star examples. Russian and English definitions agree.
 - [Resistance Radius and Diameter of a Graph](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Metric%20parameters/Resistance%20Radius%20and%20Diameter%20of%20a%20Graph.md), equations (3)-(4) and quadratic normalization. Singleton centrality and empty-input handling above are explicit API boundary policies beyond the note's n>=2 assumptions.
 
+## Eigenvector centrality
+
+```python
+eigen = lap.eigenvector_centrality()
+scores = to_series(eigen.scores)
+eigenvalue = eigen.eigenvalue
+```
+
+The frozen `EigenvectorCentralityResult` contains the largest adjacency
+eigenvalue and a `VertexValues` field `scores`, named `eigenvector_centrality`.
+The method reconstructs weighted adjacency from the Laplacian and solves
+**A v = lambda_max v**, with positive entries and sum(v)=1. It does not use
+an eigenvector of L or Euclidean-length normalization. The existing pandas
+`to_series()` adapter exports the scores without changing label order.
+
+The current domain is undirected graphs. A nonempty connected graph returns
+one result. Disconnected graphs require `componentwise=True`, which returns
+separate results in component order, each normalized to one. This does not
+define a global ranking of disconnected components or suppress components
+whose largest eigenvalue is smaller than another component's. A singleton
+has eigenvalue zero and score one: its one-dimensional normalized eigenvector
+is unique, unlike its undefined spanning-tree edge-end centrality. An empty
+graph raises ValueError by default and returns () in componentwise mode.
+Directed inputs raise NotImplementedError.
+
+The dense solver scales adjacency by its largest entry, averages asymmetry
+already accepted within the stored symmetry tolerance, and uses `numpy.linalg.eigh`.
+It selects the **largest algebraic eigenvalue**, not the largest absolute
+eigenvalue: bipartite graphs also have its negative. It corrects only the
+global sign, checks strict positivity and the residual against the original
+scaled adjacency, and restores the eigenvalue's original conductance units.
+The top eigenvalue gap must exceed `atol + rtol * spectral_scale` in those
+units. Unresolved gaps, nonpositive numerical eigenvectors or failed residual
+checks raise ValueError; no clipping or arbitrary choice from an unresolved
+eigenspace is performed. Choose tolerances appropriate to the weight scale.
+
+`python -m examples.circumsphere_centrality_pandas` now displays eigenvector
+and spanning-tree scores side by side. On P5 the eigenvector is proportional
+to (1,sqrt(3),2,sqrt(3),1), with eigenvalue sqrt(3). On K1,4 it is proportional
+to (2,1,1,1,1), with eigenvalue 2. The star center scores 1/3 under eigenvector
+centrality and 1/2 under spanning-tree centrality. On the path, eigenvector
+centrality distinguishes the middle vertex from the other internal vertices.
+
+Source: [Centroid, Spanning-Tree, and Eigenvector Centralities](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Metric%20parameters/Centroid,%20Spanning-Tree,%20and%20Eigenvector%20Centralities.md),
+sections “Eigenvector centrality and a common normalization” and “The complete
+graph, a path, and a star”, v5 revision
+`d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`. Russian and English definitions
+agree. Singleton and componentwise policies are explicit extensions of the
+note's connected n>=2 domain.
+
 ## Tolerances and conditioning
 
 `MatrixTolerance(atol=1e-10, rtol=1e-12)` is immutable and stored on each matrix.

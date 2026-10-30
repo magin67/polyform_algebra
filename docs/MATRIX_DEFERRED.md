@@ -18,16 +18,17 @@ This ledger distinguishes mathematical decisions from scheduled implementation.
 
 ### Planned Laplacian methods
 
-Laplacian and its undirected `dirichlet(selected)`, `circumsphere()` and
-`spanning_tree_centrality()` methods are implemented. The latter two provide
-explicit componentwise results; singleton centrality has scores=None.
+Laplacian and its undirected `dirichlet(selected)`, `circumsphere()`,
+`spanning_tree_centrality()` and `eigenvector_centrality()` methods are implemented.
+Sphere and centrality methods provide explicit componentwise results;
+singleton tree centrality has scores=None, while singleton eigenvector
+centrality has score one and eigenvalue zero.
 The following methods are planned only; no placeholder calculations or
 unimplemented public methods are introduced by these stages.
 
 | Proposed method | Contract to implement | Acceptance checks |
 |---|---|---|
 | `annihilators()` | Labeled left/right nullspaces and their dimensions; expose a unique normalized vector only for a one-dimensional kernel. For outgoing L, L1=0; under strong connectivity normalize the positive left vector to sum n. Balance then gives ones on both sides. Reducible cases need explicit handling. | Lr=0 and l.T L=0; balanced examples; more than one component must not silently produce a preferred unique vector. |
-| `eigenvector_centrality()` | Perron vector of adjacency reconstructed from L, normalized to sum one. Start with connected undirected graphs; define disconnected/singleton behavior explicitly. | A v=lambda_max v, sum v=1; the P5 vector proportional to (1,sqrt(3),2,sqrt(3),1). |
 
 Spanning-tree centrality is not an alias for arbitrary forest centrality.
 The latter requires a distribution over forests or a fixed component count

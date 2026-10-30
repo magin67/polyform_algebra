@@ -14,7 +14,10 @@ from .._core.basis import Basis
 from .._core.space import Space
 from . import _numeric as num
 from .context import LabeledMatrix, MatrixAxis, MatrixKind
-from .results import CircumsphereResult, SpanningTreeCentralityResult, VertexValues
+from .results import (
+    CircumsphereResult, SpanningTreeCentralityResult,
+    EigenvectorCentralityResult, VertexValues,
+)
 
 
 @dataclass(frozen=True, eq=False, init=False)
@@ -40,7 +43,7 @@ class Laplacian(LabeledMatrix):
         if not isinstance(componentwise, bool):
             raise TypeError("componentwise must be a bool")
         if not self.is_symmetric():
-            raise NotImplementedError("sphere and tree centrality require an undirected Laplacian")
+            raise NotImplementedError("this operation requires an undirected Laplacian")
         if not componentwise and len(self._components) != 1:
             raise ValueError("a nonempty connected graph is required; use componentwise=True")
         if len(self._components) == 1:
@@ -121,6 +124,51 @@ class Laplacian(LabeledMatrix):
                 degrees / (2 * (n - 1)), axis=graph.rows, name="spanning_tree_centrality")
             results.append(SpanningTreeCentralityResult(VertexValues(
                 degrees, axis=graph.rows, name="expected_tree_degree"), scores))
+        return tuple(results) if componentwise else results[0]
+
+    def eigenvector_centrality(self, *, componentwise=False):
+        """Return the adjacency Perron eigenpair, with scores normalized by sum.
+
+        For undirected connected graphs, use the largest algebraic eigenvalue,
+        not the largest absolute eigenvalue (bipartite graphs also have -rho).
+        Componentwise mode normalizes each component separately. A singleton
+        has eigenvalue zero and score one; empty component mode returns ().
+        """
+        results = []
+        for graph in self._metric_components(componentwise):
+            n = len(graph.rows.labels)
+            if n == 1:
+                eigenvalue, scores = 0.0, np.ones(1)
+            else:
+                adjacency = graph.to_adjacency().to_numpy()
+                unit = num.scale(adjacency)
+                if unit == 0:
+                    raise ValueError("connected adjacency has no numerically resolved coupling")
+                # Scaling bounds the eigensolver input; restore the eigenvalue's
+                # conductance units afterwards. Average only the asymmetry
+                # already accepted by the matrix's symmetry tolerance.
+                scaled = adjacency / unit
+                symmetric = (scaled + scaled.T) / 2
+                eigenvalues, eigenvectors = np.linalg.eigh(symmetric)
+                cutoff = graph.tolerance.atol / unit + graph.tolerance.rtol * num.scale(eigenvalues)
+                if eigenvalues[-1] - eigenvalues[-2] <= cutoff:
+                    raise ValueError("Perron eigenvalue gap is unresolved at this tolerance; choose a smaller tolerance")
+                vector = eigenvectors[:, -1]
+                # An eigenvector's global sign is arbitrary. Taking componentwise
+                # absolute values could hide an incorrect or unresolved eigenpair.
+                if vector.sum() < 0:
+                    vector = -vector
+                if not np.isfinite(vector).all() or np.any(vector <= 0):
+                    raise ValueError("positive Perron vector is numerically unresolved")
+                scores = vector / vector.sum()
+                with np.errstate(over="ignore"):
+                    eigenvalue = float(eigenvalues[-1] * unit)
+                residual = scaled @ scores - eigenvalues[-1] * scores
+                if (not np.isfinite(eigenvalue) or not np.isfinite(scores).all()
+                        or np.any(np.abs(residual) > cutoff)):
+                    raise ValueError("Perron eigenpair failed finite-value or residual checks")
+            results.append(EigenvectorCentralityResult(eigenvalue, VertexValues(
+                scores, axis=graph.rows, name="eigenvector_centrality")))
         return tuple(results) if componentwise else results[0]
 
     def dirichlet(self, selected):

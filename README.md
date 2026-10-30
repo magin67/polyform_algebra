@@ -58,7 +58,7 @@ assert Polyform.zero().exp() == Polyform.one()
 | `examples.introductory.note06_single_edge` | Заметка 6: усиление одной связи треугольника |
 | `examples.introductory.note07_two_edges` | Заметка 7: совместное усиление двух связей |
 | `examples.dirichlet_two_vertices_pandas` | Две выбранные вершины пути: би-координаты проекций в DataFrame и решение задачи Дирихле (требуется pandas) |
-| `examples.circumsphere_centrality_pandas` | Путь и звезда: резистивный радиус, координаты центра и остовная центральность в DataFrame; несвязный граф (требуется pandas) |
+| `examples.circumsphere_centrality_pandas` | Путь и звезда: радиус, координаты центра, остовная и собственная центральности рядом в DataFrame; несвязный граф (требуется pandas) |
 
 Пошаговое пояснение и ожидаемые результаты:
 [вариации связей треугольника на Python](docs/INTRODUCTORY_VARIATIONS.md).
