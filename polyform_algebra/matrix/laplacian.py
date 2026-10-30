@@ -16,7 +16,7 @@ from . import _numeric as num
 from .context import LabeledMatrix, MatrixAxis, MatrixKind
 from .results import (
     CircumsphereResult, SpanningTreeCentralityResult,
-    EigenvectorCentralityResult, VertexValues,
+    EigenvectorCentralityResult, AnnihilatorsResult, VertexValues,
 )
 
 
@@ -36,6 +36,67 @@ class Laplacian(LabeledMatrix):
             raise ValueError("Laplacian requires laplacian representation")
         super().__init__(values, rows=rows, columns=rows if columns is None else columns,
                          kind=kind, representation=representation, tolerance=tolerance)
+
+    def annihilators(self, atol=None, rtol=None):
+        """Return labeled numerical bases of ker(L.T) and ker(L).
+
+        Under L=diag(outgoing degrees)-A, right annihilation means Lr=0,
+        and left annihilation means l.T L=0. A single SVD and shared cutoff
+        give both dimensions. Only a 1-D kernel has a sum-n representative;
+        reducible digraphs may have zeros in their normalized left vector.
+        This method neither balances the graph nor defines a directed metric.
+        """
+        a = self._array()
+        n = len(a)
+        tol = self._tol(atol, rtol)
+        unit = num.scale(a)
+        scaled = a / unit if unit else a.copy()
+        u, singular_values, vh = np.linalg.svd(scaled, full_matrices=True)
+        cutoff = tol.atol / unit + tol.rtol * num.scale(singular_values) if unit else 0.0
+        rank = int(np.count_nonzero(singular_values > cutoff))
+        if n and rank == n:
+            raise ValueError("Laplacian kernel is unresolved at this tolerance")
+        left_values, right_values = u[:, rank:].copy(), vh[rank:].T.copy()
+        # Fix only a column's arbitrary sign. Rotations within multidimensional
+        # nullspaces are noncanonical and may change with the numeric backend.
+        for basis in (left_values, right_values):
+            for j in range(basis.shape[1]):
+                if basis[np.argmax(np.abs(basis[:, j])), j] < 0:
+                    basis[:, j] *= -1
+        floor = 64 * np.finfo(float).eps * max(1, n) * num.scale(singular_values)
+
+        def check_residual(matrix, vectors):
+            residual = matrix @ vectors
+            norms = np.linalg.norm(residual, axis=0)
+            limits = (cutoff + floor) * np.linalg.norm(vectors, axis=0)
+            if not np.isfinite(residual).all() or np.any(norms > limits):
+                raise ValueError("annihilator failed numerical residual checks")
+
+        check_residual(scaled.T, left_values)
+        check_residual(scaled, right_values)
+        left = right = None
+        if n - rank == 1:
+            total = left_values[:, 0].sum()
+            if abs(total) <= 64 * np.finfo(float).eps * max(1, n):
+                raise ValueError("left annihilator sum normalization is numerically unresolved")
+            normalized_left = left_values[:, 0] * (n / total)
+            normalized_right = np.ones(n)
+            check_residual(scaled.T, normalized_left[:, None])
+            check_residual(scaled, normalized_right[:, None])
+            left = VertexValues(normalized_left, axis=self.rows, name="left_annihilator")
+            right = VertexValues(normalized_right, axis=self.columns, name="right_annihilator")
+
+        def labeled_basis(values, side, vertex_axis):
+            dimension = values.shape[1]
+            axis = MatrixAxis(basis=Basis(
+                [f"{side}_{i}" for i in range(dimension)],
+                space=Space(f"{side} annihilator coefficients", dimension)))
+            return LabeledMatrix(values, rows=vertex_axis, columns=axis,
+                                 kind=MatrixKind.OPERATOR, tolerance=tol)
+
+        return AnnihilatorsResult(
+            labeled_basis(left_values, "left", self.rows),
+            labeled_basis(right_values, "right", self.columns), left, right, tol)
 
     def _metric_components(self, componentwise):
         """Select finite connected metric domains without relating distinct components."""

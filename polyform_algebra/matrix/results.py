@@ -5,7 +5,8 @@ from typing import Optional
 
 import numpy as np
 
-from .context import MatrixAxis
+from .context import LabeledMatrix, MatrixAxis
+from ._numeric import MatrixTolerance
 
 
 @dataclass(frozen=True, eq=False, init=False)
@@ -80,3 +81,27 @@ class EigenvectorCentralityResult:
 
     eigenvalue: float
     scores: VertexValues
+
+
+@dataclass(frozen=True, eq=False)
+class AnnihilatorsResult:
+    """Numerical left/right kernel bases and unique sum-n representatives.
+
+    Basis vectors are columns: left_basis.T @ L=0 and L @ right_basis=0.
+    They are Euclidean-coordinate orthonormal, not orthonormal in a PMG metric.
+    left/right are None unless the corresponding numerical kernel is 1-D.
+    """
+
+    left_basis: LabeledMatrix
+    right_basis: LabeledMatrix
+    left: Optional[VertexValues]
+    right: Optional[VertexValues]
+    tolerance: MatrixTolerance
+
+    @property
+    def left_dimension(self):
+        return len(self.left_basis.columns.labels)
+
+    @property
+    def right_dimension(self):
+        return len(self.right_basis.columns.labels)

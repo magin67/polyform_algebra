@@ -386,6 +386,79 @@ graph, a path, and a star”, v5 revision
 agree. Singleton and componentwise policies are explicit extensions of the
 note's connected n>=2 domain.
 
+## Directed Laplacian annihilators
+
+```python
+from polyform_algebra.matrix.pandas import to_dataframe, to_series
+
+result = lap.annihilators()
+left_basis = to_dataframe(result.left_basis)
+right_basis = to_dataframe(result.right_basis)
+if result.left is not None:
+    normalized_left = to_series(result.left)
+    normalized_right = to_series(result.right)
+```
+
+`annihilators(atol=None, rtol=None)` supports outgoing directed and undirected
+Laplacians, including reducible/disconnected graphs. It returns a frozen
+`AnnihilatorsResult` with:
+
+- `left_basis`: generic OPERATOR matrix U, with **U.T L=0** numerically.
+- `right_basis`: generic OPERATOR matrix V, with **L V=0** numerically.
+- `left_dimension`, `right_dimension`: numbers of basis columns. Since L is
+  square, these dimensions agree.
+- `left`, `right`: VertexValues normalized to coefficient sum n, only when
+  the numerical kernels are one-dimensional; otherwise both are None.
+- `tolerance`: the effective MatrixTolerance, including optional overrides.
+  Overrides do not change the source Laplacian.
+
+Basis rows retain the vertex axes and their original ordering. Columns have
+an explicit new coefficient Space/Basis with names left_0, left_1, ... or
+right_0, right_1, .... These are coordinate maps into the respective kernels,
+not a declaration that the graph has a Euclidean PMG metric. A single scaled
+SVD gives both kernels with the same cutoff `atol + rtol * largest_singular_value`.
+Basis columns are Euclidean-coordinate orthonormal. The largest-magnitude
+entry of each column fixes its sign, but rotations/order inside a multidimensional
+kernel are not canonical. Compare subspaces and equations rather than exact
+SVD columns across platforms or permutations.
+
+For L=diag(outgoing degrees)-A, the constant right annihilator is always
+known. When the kernel is one-dimensional, `right` is exactly the ones vector;
+`left` is normalized by its sum. In a connected balanced graph both normalized
+vectors are ones within numerical precision. In the strongly connected
+unbalanced note example, the left vector is (15/16,12/16,21/16), proportional
+to rooted spanning-tree potentials (5,4,7). Normalized values are not the
+raw potentials. A reducible graph with one-dimensional kernel may have zero
+left entries: the single arc a->b gives left=(0,2), right=(1,1).
+
+For a->b and a->c, both kernels are two-dimensional although the underlying
+undirected graph is connected. The left space consists of (0,s,t) and the
+right of ((s+t)/2,s,t). The ones vector still belongs to the right space, but
+it cannot represent that entire kernel: no preferred normalized vector is
+returned. A zero n-by-n matrix has nullity n; an isolated singleton returns
+left=right=(1); an empty matrix has zero-dimensional kernels and 0-by-0 bases,
+with both normalized fields None.
+
+Dimensions are **numerical**, consistent with the singular-value policy of
+`kernel()`/`rank()`, not exact topological counts of terminal strongly connected
+components. A high absolute tolerance can treat weak couplings as unresolved
+and increase nullity. Lower the tolerance when such couplings must be resolved;
+the source graph is never changed. Residual checks include the selected cutoff
+and floating-point roundoff; unresolved normalization or a missing numerical
+Laplacian kernel raises ValueError. This operation performs no balancing,
+pseudoinverse projection or directed metric construction.
+
+Run `python -m examples.directed_annihilators_pandas` for the balanced directed
+cycle, the unbalanced strongly connected example and the two-dimensional
+case, with DataFrame bases, normalized values and residual checks.
+
+Sources: [Balanced Graphs and Spanning-Tree Potentials](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Balanced%20graphs/Balanced%20Graphs%20and%20Spanning-Tree%20Potentials.md),
+balance criterion and “Why positivity matters”; [Balancing a Directed Graph
+by Spanning-Tree Potentials](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Balanced%20graphs/Balancing%20a%20Directed%20Graph%20by%20Spanning-Tree%20Potentials.md),
+normalization and three-participant example. Revision
+`d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661` of v5. Russian and English
+kernel identities agree. The balancing operation remains a separate planned stage.
+
 ## Tolerances and conditioning
 
 `MatrixTolerance(atol=1e-10, rtol=1e-12)` is immutable and stored on each matrix.

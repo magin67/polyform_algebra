@@ -20,6 +20,9 @@ This ledger distinguishes mathematical decisions from scheduled implementation.
 
 Laplacian and its undirected `dirichlet(selected)`, `circumsphere()`,
 `spanning_tree_centrality()` and `eigenvector_centrality()` methods are implemented.
+`annihilators()` now provides labeled left/right numerical kernel bases and
+sum-n normalized representatives only in the one-dimensional case, also for
+directed graphs. No graph weights are changed by this operation.
 Sphere and centrality methods provide explicit componentwise results;
 singleton tree centrality has scores=None, while singleton eigenvector
 centrality has score one and eigenvalue zero.
@@ -28,7 +31,7 @@ unimplemented public methods are introduced by these stages.
 
 | Proposed method | Contract to implement | Acceptance checks |
 |---|---|---|
-| `annihilators()` | Labeled left/right nullspaces and their dimensions; expose a unique normalized vector only for a one-dimensional kernel. For outgoing L, L1=0; under strong connectivity normalize the positive left vector to sum n. Balance then gives ones on both sides. Reducible cases need explicit handling. | Lr=0 and l.T L=0; balanced examples; more than one component must not silently produce a preferred unique vector. |
+| Directed graph balancing (method name to be agreed) | Separate next stage: positive source scaling D_sigma L, using the sum-n left annihilator under strong connectivity. Return original-context multipliers and the balanced graph; specify reducible/component handling. A left vector with zeros does not authorize positive balancing. | Zero row/column sums, preservation of arc support and outgoing proportions, identity on balanced graphs, explicit rejection of unsupported reducible cases. |
 
 Spanning-tree centrality is not an alias for arbitrary forest centrality.
 The latter requires a distribution over forests or a fixed component count
