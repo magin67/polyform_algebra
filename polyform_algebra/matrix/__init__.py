@@ -3,6 +3,8 @@
 from .context import MatrixAxis, MatrixKind, MatrixRepresentation, LabeledMatrix
 from ._numeric import MatrixTolerance
 from .laplacian import Laplacian, DirichletResult
+from .results import VertexValues, CircumsphereResult, SpanningTreeCentralityResult
 
 __all__ = ["MatrixAxis", "MatrixKind", "MatrixRepresentation", "MatrixTolerance",
-           "LabeledMatrix", "Laplacian", "DirichletResult"]
+           "LabeledMatrix", "Laplacian", "DirichletResult", "VertexValues",
+           "CircumsphereResult", "SpanningTreeCentralityResult"]

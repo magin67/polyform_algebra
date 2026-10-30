@@ -1,4 +1,4 @@
-"""Validated Laplacians and the undirected Dirichlet problem.
+"""Validated Laplacians, resistance geometry and the undirected Dirichlet problem.
 
 PMG Spaces, 'Selected Vertices and the Dirichlet Problem', equations (7)-(8):
 solve L_II B = -L_IP. Rows of B are bi-coordinates of projections, not
@@ -14,6 +14,7 @@ from .._core.basis import Basis
 from .._core.space import Space
 from . import _numeric as num
 from .context import LabeledMatrix, MatrixAxis, MatrixKind
+from .results import CircumsphereResult, SpanningTreeCentralityResult, VertexValues
 
 
 @dataclass(frozen=True, eq=False, init=False)
@@ -32,6 +33,95 @@ class Laplacian(LabeledMatrix):
             raise ValueError("Laplacian requires laplacian representation")
         super().__init__(values, rows=rows, columns=rows if columns is None else columns,
                          kind=kind, representation=representation, tolerance=tolerance)
+
+    def _metric_components(self, componentwise):
+        """Select finite connected metric domains without relating distinct components."""
+        a = self._array()
+        if not isinstance(componentwise, bool):
+            raise TypeError("componentwise must be a bool")
+        if not self.is_symmetric():
+            raise NotImplementedError("sphere and tree centrality require an undirected Laplacian")
+        if not componentwise and len(self._components) != 1:
+            raise ValueError("a nonempty connected graph is required; use componentwise=True")
+        if len(self._components) == 1:
+            return (self,)
+        result = []
+        for group in self._components:
+            labels = tuple(self.rows.labels[i] for i in group)
+            axis = MatrixAxis(basis=Basis(labels, space=Space(
+                f"{self.rows.space.name}: component {len(result)}", len(labels))))
+            result.append(Laplacian(a[np.ix_(group, group)], rows=axis,
+                                    tolerance=self.tolerance, kind=self.kind))
+        return tuple(result)
+
+    def _tree_geometry(self):
+        """Shared connected computation from a validated centered Greenian.
+
+        PMG 'Centroid, Spanning-Tree, and Eigenvector Centralities', (4):
+        delta_i=sum_j c_ij R_ij. The total degree is 2(n-1), not the sum of
+        weighted graph degrees. Never multiply disconnected +inf by zero.
+        """
+        n = len(self.rows.labels)
+        green = self.to_greenian().to_numpy()
+        resistance = num.distance(green)
+        adjacency = self.to_adjacency().to_numpy()
+        degrees = (adjacency * resistance).sum(axis=1)
+        eps = self.tolerance.threshold(max(1, n))
+        if (not np.isfinite(degrees).all()
+                or abs(degrees.sum() - 2 * (n - 1)) > eps
+                or (n > 1 and (np.any(degrees < 1 - eps)
+                               or np.any(degrees > np.count_nonzero(adjacency, axis=1) + eps)))):
+            raise ValueError("expected tree degrees failed numerical consistency checks")
+        return degrees, green, resistance
+
+    def circumsphere(self, *, componentwise=False):
+        """Return the resistance radius and labeled bi-coordinates of the center.
+
+        Connected undirected graphs only by default. With componentwise=True,
+        return a tuple, in component order, including singleton radius zero
+        and center coordinate one. An empty graph then gives an empty tuple.
+        This is the sphere in the affine hull, not a smallest enclosing ball
+        or a new element of the isotropic extension.
+        """
+        graphs = self._metric_components(componentwise)
+        results = []
+        for graph in graphs:
+            degrees, green, resistance = graph._tree_geometry()
+            coordinates = 1 - degrees / 2
+            r = np.diag(green)
+            # rho = tr(Gr)/n + ||O-centroid||^2. This avoids constructing an
+            # inverse of R and retains negative coordinates of the center.
+            radius = float(r.mean() + (r @ graph._array() @ r) / 4)
+            eps = graph.tolerance.threshold(max(1, len(r)))
+            residual = resistance @ coordinates - 2 * radius
+            metric_eps = graph.tolerance.threshold(max(num.scale(resistance), abs(2 * radius)))
+            if (not np.isfinite(radius) or radius < 0
+                    or abs(coordinates.sum() - 1) > eps
+                    or not np.isfinite(residual).all()
+                    or np.any(np.abs(residual) > metric_eps)):
+                raise ValueError("circumsphere failed center or equal-radius numerical checks")
+            results.append(CircumsphereResult(radius, VertexValues(
+                coordinates, axis=graph.rows, name="center_coordinate")))
+        return tuple(results) if componentwise else results[0]
+
+    def spanning_tree_centrality(self, *, componentwise=False):
+        """Return expected tree degrees and delta/[2(n-1)] normalized scores.
+
+        Trees are sampled with probability proportional to the product of
+        conductances. This is not a distribution over arbitrary forests.
+        Componentwise results have separate normalizations; singleton scores
+        are None because their trees contain no edge ends to sample.
+        """
+        graphs = self._metric_components(componentwise)
+        results = []
+        for graph in graphs:
+            degrees, _, _ = graph._tree_geometry()
+            n = len(degrees)
+            scores = None if n == 1 else VertexValues(
+                degrees / (2 * (n - 1)), axis=graph.rows, name="spanning_tree_centrality")
+            results.append(SpanningTreeCentralityResult(VertexValues(
+                degrees, axis=graph.rows, name="expected_tree_degree"), scores))
+        return tuple(results) if componentwise else results[0]
 
     def dirichlet(self, selected):
         """Return influence and harmonic extension for an ordered vertex subset.

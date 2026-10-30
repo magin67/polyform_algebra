@@ -18,16 +18,16 @@ This ledger distinguishes mathematical decisions from scheduled implementation.
 
 ### Planned Laplacian methods
 
-Laplacian and its undirected `dirichlet(selected)` method are implemented.
+Laplacian and its undirected `dirichlet(selected)`, `circumsphere()` and
+`spanning_tree_centrality()` methods are implemented. The latter two provide
+explicit componentwise results; singleton centrality has scores=None.
 The following methods are planned only; no placeholder calculations or
-unimplemented public methods are introduced by the Dirichlet stage.
+unimplemented public methods are introduced by these stages.
 
 | Proposed method | Contract to implement | Acceptance checks |
 |---|---|---|
 | `annihilators()` | Labeled left/right nullspaces and their dimensions; expose a unique normalized vector only for a one-dimensional kernel. For outgoing L, L1=0; under strong connectivity normalize the positive left vector to sum n. Balance then gives ones on both sides. Reducible cases need explicit handling. | Lr=0 and l.T L=0; balanced examples; more than one component must not silently produce a preferred unique vector. |
-| `circumsphere()` | For connected undirected graphs, return resistance radius rho (squared linear radius) and labeled center bi-coordinates alpha, sum alpha=1. Negative coordinates are allowed. Add explicit per-component behavior and singleton/empty policies. | R alpha=2 rho 1; complete graph, path and star; verify alpha=1-delta/2. |
 | `eigenvector_centrality()` | Perron vector of adjacency reconstructed from L, normalized to sum one. Start with connected undirected graphs; define disconnected/singleton behavior explicitly. | A v=lambda_max v, sum v=1; the P5 vector proportional to (1,sqrt(3),2,sqrt(3),1). |
-| `spanning_tree_centrality()` | Expected degree delta_i=sum_j c_ij R_ij and normalized score delta_i/[2(n-1)] for connected undirected n>=2. Return both with labels. Define component and singleton policies. | Sum delta=2(n-1), weighted-tree enumeration on a triangle, relation to circumcenter coordinates. |
 
 Spanning-tree centrality is not an alias for arbitrary forest centrality.
 The latter requires a distribution over forests or a fixed component count
@@ -44,7 +44,7 @@ Sources for subsequent implementation:
 | Capability | What remains | Acceptance example |
 |---|---|---|
 | Incidence objects | Explicit edge basis, oriented endpoints, conductances and adapter methods. Adjacency and its Laplacian conversions are implemented. | L=B diag(c) B.T and invariance under reversal of edge orientation. |
-| Numerical coordinates | Dedicated bi-/di-coordinate results, Series adapters and explicit transition objects reusing Basis links. | Nonorthogonal basis: d=G b, with invertibility checked on the chosen span. |
+| Numerical coordinates | General bi-/di-coordinate operations, Series import and explicit transition objects reusing Basis links. VertexValues and strict Series export already cover the implemented scalar vertex results. | Nonorthogonal basis: d=G b, with invertibility checked on the chosen span. |
 | Metric restriction and unique projections | General embeddings, linear/affine subspaces and nonsingular restricted metric solves beyond the implemented graph Dirichlet problem. | Orthogonal residual in general coordinates; singular restriction rejected. |
 | Isotropic extension | Distinguished z, vertex Gramian -R/2 and extended Gramian, locality and affine weight. | Nonsingular ambient metric with a null vector; degenerate restriction to z-perp. |
 | Graph operations | Separate induced-subgraph, elimination and contraction methods. | Star elimination preserves leaf resistance; induced deletion and contraction produce distinct results. |

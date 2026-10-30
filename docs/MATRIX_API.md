@@ -259,6 +259,83 @@ equations (3), (7), (8), the weighted path and disconnected cases, v5 revision
 `d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`. The corresponding Russian formulas
 agree. Directed extensions discussed in the note remain outside this stage.
 
+## Circumspheres and spanning-tree centrality
+
+```python
+from polyform_algebra.matrix.pandas import to_series
+
+sphere = lap.circumsphere()
+rho = sphere.resistance_radius
+center = to_series(sphere.center_coordinates)
+
+centrality = lap.spanning_tree_centrality()
+degrees = to_series(centrality.expected_degrees)
+scores = to_series(centrality.scores)  # n >= 2; singleton scores are None
+```
+
+Both methods require a nonempty connected undirected graph by default.
+They return frozen `CircumsphereResult` and `SpanningTreeCentralityResult`
+objects. These are numerical results, not sphere elements or new forms in
+the formal polyform algebra. Directed inputs raise NotImplementedError.
+
+For each vertex, delta_i=sum_j c_ij R_ij is its expected **unweighted degree**
+in a random spanning tree. The probability of a tree is proportional to the
+product of its conductances. Scores are delta_i/[2(n-1)], summing to one for
+n>=2. This uses the current PMG normalization, not the older delta_i-1 score
+and not an unspecified distribution over forests.
+
+The center's bi-coordinates are alpha_i=1-delta_i/2. They sum to one but can
+be negative; negative coordinates are retained, never clipped. For r=diag(Gr),
+the resistance radius is rho=mean(r)+r.T L r/4. It is the **squared linear
+radius**, not its square root and not the resistance diameter 4*rho. The
+circumsphere lies in the affine hull of the resistance simplex; it need not
+be the smallest enclosing sphere.
+
+The shared numerical calculation uses a validated centered Greenian and its
+distance matrix. It checks sum(delta)=2(n-1), the expected-degree bounds,
+sum(alpha)=1 and R alpha=2 rho 1, with the stored tolerance. A failed rank or
+consistency check raises ValueError. No full inverse of R, forest enumeration
+or polyform exponential is required by the algorithm. Tests additionally use
+independent resistance solves, exact small-graph values and tree enumeration.
+
+**Disconnected and small graphs:**
+
+| Input | Default | `componentwise=True` |
+|---|---|---|
+| Connected, n>=2 | One result | Tuple containing one result |
+| Disconnected | ValueError, requesting explicit component mode | Tuple of separate results, ordered by first vertex occurrence |
+| One vertex | rho=0, alpha=1; delta=0 and scores=None | Tuple containing that same point result |
+| Empty graph | ValueError | Empty tuple |
+
+A singleton has no edge ends to sample, so its normalized tree centrality
+is explicitly undefined (`None`). It is not assigned an arbitrary zero or
+unit score. Each nonsingleton component has its own normalization to one;
+these are not scores normalized across the whole disconnected graph. No
+finite cross-component resistance or common sphere is introduced.
+
+Coordinate and score fields are immutable `VertexValues` with an `axis` and
+`name`. They retain vertex labels/order and support `values[label]`,
+`to_numpy()` and `to_dict()`. Integer keys are labels, not positional offsets.
+Exports are independent copies and legacy Basis mutations are detected.
+Connected results reuse the source axis. For disconnected results each
+component gets a new coordinate Space/Basis with its original labels in
+source order, as a component snapshot rather than a general subspace embedding.
+
+`matrix.pandas.to_series(values)` exports detached scalar Index labels and the
+result name. It rejects None, so undefined singleton scores require an explicit
+application choice. Use `pd.concat([...], axis=1)` to display multiple named
+results as a DataFrame; pandas remains optional.
+
+Run `python -m examples.circumsphere_centrality_pandas` for P5, K1,4 and a
+disconnected example. The two unit trees both have rho=1, but their center
+coordinates are (1/2,0,0,0,1/2) and (-1,1/2,1/2,1/2,1/2). The example prints
+those coordinates, expected tree degrees and normalized scores side by side.
+
+Sources, v5 revision `d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`:
+
+- [Centroid, Spanning-Tree, and Eigenvector Centralities](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Metric%20parameters/Centroid,%20Spanning-Tree,%20and%20Eigenvector%20Centralities.md), equations (4)-(5), path/star examples. Russian and English definitions agree.
+- [Resistance Radius and Diameter of a Graph](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Metric%20parameters/Resistance%20Radius%20and%20Diameter%20of%20a%20Graph.md), equations (3)-(4) and quadratic normalization. Singleton centrality and empty-input handling above are explicit API boundary policies beyond the note's n>=2 assumptions.
+
 ## Tolerances and conditioning
 
 `MatrixTolerance(atol=1e-10, rtol=1e-12)` is immutable and stored on each matrix.

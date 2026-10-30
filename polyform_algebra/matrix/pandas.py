@@ -2,6 +2,7 @@
 
 from .context import LabeledMatrix
 from .laplacian import Laplacian
+from .results import VertexValues
 
 
 def from_dataframe(frame, *, rows, columns, kind, representation="generic", tolerance=None):
@@ -32,3 +33,17 @@ def to_dataframe(matrix):
         index=pd.Index(matrix.rows.labels, tupleize_cols=False),
         columns=pd.Index(matrix.columns.labels, tupleize_cols=False),
     )
+
+
+def to_series(values):
+    """Export detached vertex values with their scalar labels and result name.
+
+    Undefined singleton centrality has scores=None; handle that explicitly
+    instead of silently inventing a value or interpreting None as an empty series.
+    """
+    import pandas as pd
+
+    if not isinstance(values, VertexValues):
+        raise TypeError("values must be VertexValues; undefined scores must be handled explicitly")
+    return pd.Series(values.to_numpy(), index=pd.Index(values.labels, tupleize_cols=False),
+                     name=values.name)
