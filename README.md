@@ -40,6 +40,10 @@ assert Polyform.zero().exp() == Polyform.one()
 
 ## Примеры
 
+Матричный модуль: [API и соглашения](docs/MATRIX_API.md),
+[отложенное поведение и следующие этапы](docs/MATRIX_DEFERRED.md).
+Пример преобразований: `python -m examples.matrix_transformations`.
+
 Запускать из корня репозитория, например `python -m examples.points_exam`.
 Все примеры имеют английские комментарии и не выполняют расчёты при импорте.
 

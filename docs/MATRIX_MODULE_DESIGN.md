@@ -1,5 +1,13 @@
 # Matrix module: design and first foundation
 
+**Current implementation (2026-10-30):** see [MATRIX_API.md](MATRIX_API.md) and
+[deferred behavior](MATRIX_DEFERRED.md). The text below preserves the initial
+2026-10-29 design and its first follow-up as historical rationale. Its proposed
+classes, MatrixAxis-owned space, finite-only storage and unimplemented-operation
+statements have been superseded by the current API: one matrix class, Basis-owned
+Space, validated representations, componentwise conversions and explicit +inf
+cross-component resistance. Do not use the historical tables as the current API.
+
 Status: proposed architecture; only the storage/context and DataFrame adapters
 below are implemented. Date: 2026-10-29. Code baseline: `d4c82cf` (254 tests).
 Development branch: `codex/matrix-module`; merging into main is a separate decision.

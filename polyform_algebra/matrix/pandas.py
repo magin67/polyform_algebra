@@ -3,7 +3,7 @@
 from .context import LabeledMatrix
 
 
-def from_dataframe(frame, *, rows, columns, kind):
+def from_dataframe(frame, *, rows, columns, kind, representation="generic", tolerance=None):
     """Import explicit contexts; reject missing, duplicate or reordered labels.
 
     A DataFrame alone does not identify spaces or tensor roles. Reindex it
@@ -17,7 +17,8 @@ def from_dataframe(frame, *, rows, columns, kind):
         raise ValueError("DataFrame labels must be unique")
     if tuple(frame.index) != rows.labels or tuple(frame.columns) != columns.labels:
         raise ValueError("DataFrame labels and order must match axis contexts")
-    return LabeledMatrix(frame.to_numpy(), rows=rows, columns=columns, kind=kind)
+    return LabeledMatrix(frame.to_numpy(), rows=rows, columns=columns, kind=kind,
+                         representation=representation, tolerance=tolerance)
 
 
 def to_dataframe(matrix):

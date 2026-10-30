@@ -7,6 +7,7 @@ from .objects.quform import quForm
 from .combinations.polysimplex import Polysimplex
 from .combinations.polyform import Polyform
 from ._core.basis import Basis
+from ._core.space import Space
 from ._core.monoid import Monoid
 from ._core.lincomb import LinearCombination
 
@@ -17,6 +18,7 @@ __all__ = [
     'Polysimplex',
     'Polyform',
     'Basis',
+    'Space',
     'Monoid',
     'LinearCombination',
 ]

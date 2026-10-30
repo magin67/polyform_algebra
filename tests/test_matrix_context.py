@@ -57,14 +57,14 @@ def test_axes_require_basis_unique_labels_and_named_space():
 
 @pytest.mark.parametrize("mutation", ["add", "remove", "reorder"])
 def test_mutable_basis_invalidates_axis(mutation):
-    """Both Basis methods and direct order changes must invalidate numerical context."""
+    """Direct mutations of the legacy list must invalidate numerical context."""
     vertices = axis()
     matrix = LabeledMatrix(np.eye(2), rows=vertices, columns=vertices,
                            kind=MatrixKind.METRIC)
     if mutation == "add":
-        vertices.basis.add_element("c")
+        vertices.basis.elements.append("c")
     elif mutation == "remove":
-        vertices.basis.remove_element("a")
+        vertices.basis.elements.remove("a")
     else:
         vertices.basis.elements.reverse()
     with pytest.raises(ValueError, match="basis changed"):

@@ -93,8 +93,12 @@ def test_equal_element_instance_is_a_valid_coordinate(convert):
 def test_invalid_bases_are_rejected_even_for_zero(convert,kind,error):
     """Zero input does not bypass validation of the requested coordinate system."""
     a=Point("a")
+    # Constructor validation now rejects duplicates. Also protect the legacy
+    # mutable list against duplicate insertion after construction.
+    duplicate = Basis([a], is_orthonormal=True)
+    duplicate.elements.append(Point("a"))
     bases={"missing":None,"undeclared":Basis([a]),
-           "duplicate":Basis([a,Point("a")],is_orthonormal=True),
+           "duplicate":duplicate,
            "non_atomic":Basis([Simplex.one()],is_orthonormal=True)}
     with pytest.raises(error):
         convert(Polysimplex.zero(),bases[kind])

@@ -3,13 +3,41 @@
 import numpy as np
 
 from ..objects.simplex import Simplex
+from .space import Space
 
 class Basis:
-    def __init__(self, elements, is_orthonormal=False):
+    def __init__(self, elements, is_orthonormal=False, *, space=None):
         self.elements = list(elements)
+        if len(set(self.elements)) != len(self.elements):
+            raise ValueError("Basis elements must be distinct")
         self._index = {elem: i for i, elem in enumerate(self.elements)}
         self.is_orthonormal = is_orthonormal  # Legacy declaration, not a metric check.
         self.transitions = {}
+        self._space = None
+        if space is not None:
+            self.bind_space(space)
+
+    @property
+    def space(self):
+        """The owning space, or None for a legacy basis with unspecified context."""
+        return self._space
+
+    def bind_space(self, space):
+        """Attach an unspecified basis once; never silently identify two spaces."""
+        if not isinstance(space, Space):
+            raise TypeError("space must be a Space")
+        if len(self) != space.dimension:
+            raise ValueError("basis size must equal space dimension")
+        if self._space is not None and self._space is not space:
+            raise ValueError("basis already belongs to a different space")
+        self._space = space
+
+    def reordered(self, elements):
+        """Return a basis in the same space with an explicit full permutation."""
+        elements = list(elements)
+        if len(elements) != len(self) or set(elements) != set(self.elements):
+            raise ValueError("reordering requires a full permutation of basis elements")
+        return Basis(elements, self.is_orthonormal, space=self.space)
 
     def centroid(self, name=None):
         """Return (mean element, frame) for a nonempty grade-one Element basis.
@@ -39,6 +67,8 @@ class Basis:
     def add_element(self, elem):
         """Append a new basis element and invalidate all incident transitions."""
         if elem not in self._index:
+            if self.space is not None:
+                raise ValueError("cannot resize a basis of a fixed-dimensional space")
             self._index[elem] = len(self.elements)
             self.elements.append(elem)
             self._invalidate_transitions()
@@ -46,6 +76,8 @@ class Basis:
     def remove_element(self, elem):
         """Remove an element and invalidate links in both directions; absent is a no-op."""
         if elem in self._index:
+            if self.space is not None:
+                raise ValueError("cannot resize a basis of a fixed-dimensional space")
             idx = self._index.pop(elem)
             del self.elements[idx]
             # Rebuild indices after removal.
@@ -95,18 +127,21 @@ class Basis:
     def index(self, elem):
         return self._index.get(elem, -1)
 
-    def link_to(self, other_basis, frame_ind=0, tolerance=1e-10): # Связывание базисов
+    def link_to(self, other_basis, frame_ind=0, tolerance=1e-10):
+        """Link coordinate bases; declared spaces must be the same object."""
         from ..combinations.polysimplex import Polysimplex
+        if self.space is not other_basis.space:
+            raise ValueError("basis links require the same space; bind legacy bases first")
         n = len(self)
         m = len(other_basis)
         if n != m:
             raise ValueError("Размеры базисов должны совпадать")
 
-        # Строим матрицу перехода из self в other, используя существующие представления
+        # Columns express old basis elements in the target basis: x_new=M x_old.
         M = np.zeros((n, n))
         for i, elem in enumerate(self.elements):
             try:
-                frame = elem[frame_ind]   # представление в other_basis (должно существовать)
+                frame = elem[frame_ind]  # A representation in other_basis must exist.
             except IndexError:
                 raise ValueError(f"Элемент {elem} не имеет фрейма с индексом {frame_ind}")
           
@@ -125,13 +160,13 @@ class Basis:
             raise ValueError("Матрица перехода вырождена")
         M_inv = np.linalg.inv(M)
 
-        # Сохраняем матрицы
+        # Store both directions so invalidation remains symmetric.
         self.transitions[other_basis] = (M, M_inv)
         other_basis.transitions[self] = (M_inv, M)
 
-        # Добавляем представления элементам other_basis в базисе self (обратные)
+        # Columns of the inverse express target elements in the source basis.
         for j, b_elem in enumerate(other_basis.elements):
-            coeffs = M_inv[:, j]   # столбец j обратной матрицы
+            coeffs = M_inv[:, j]
             terms = {}
             for i, c in enumerate(coeffs):
                 if abs(c) > tolerance:
