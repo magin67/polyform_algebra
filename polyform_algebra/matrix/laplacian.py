@@ -302,6 +302,99 @@ class Laplacian(LabeledMatrix):
                 scores, axis=graph.rows, name="eigenvector_centrality")))
         return tuple(results) if componentwise else results[0]
 
+    def _undirected_couplings(self):
+        """Extract graph weights without silently clipping invalid signs."""
+        a = self._array()
+        if not self.is_symmetric():
+            raise NotImplementedError("graph deletion/contraction currently requires an undirected Laplacian")
+        adjacency = -a.copy()
+        np.fill_diagonal(adjacency, 0)
+        if np.any(adjacency < 0):
+            raise ValueError("graph deletion/contraction requires nonnegative conductances without sign corrections")
+        return adjacency
+
+    def _from_graph_couplings(self, adjacency, axis):
+        """Recompute degrees after changing edges; preserve role and tolerance."""
+        values = -adjacency
+        with np.errstate(over="ignore", invalid="ignore"):
+            np.fill_diagonal(values, adjacency.sum(axis=1))
+        result = Laplacian(values, rows=axis, kind=self.kind, tolerance=self.tolerance)
+        if not result.is_symmetric():
+            raise ValueError("transformed graph failed symmetry checks")
+        return result
+
+    def induced_subgraph(self, keep):
+        """Keep only edges with both endpoints in the ordered vertex subset.
+
+        The adjacency is A_PP, but degrees must be recomputed: L_PP alone
+        still includes deleted edges. Isolates and an empty subset are valid.
+        This deletion does not preserve the original resistance metric.
+        """
+        adjacency = self._undirected_couplings()
+        if isinstance(keep, (str, bytes, set, frozenset)):
+            raise TypeError("keep must be an ordered iterable of vertex labels")
+        keep = tuple(keep)
+        if len(set(keep)) != len(keep):
+            raise ValueError("keep must contain distinct vertices")
+        index = {label: i for i, label in enumerate(self.rows.labels)}
+        if any(label not in index for label in keep):
+            raise ValueError("keep contains an unknown vertex")
+        indices = [index[label] for label in keep]
+        axis = MatrixAxis(basis=Basis(keep, space=Space(
+            f"{self.rows.space.name}: induced vertices", len(keep))))
+        return self._from_graph_couplings(adjacency[np.ix_(indices, indices)], axis)
+
+    def contract(self, partition):
+        """Identify each named group of a complete disjoint vertex partition.
+
+        Pass a mapping {new_label: ordered_members}; mapping iteration fixes
+        the output order. Groups need not be connected. PMG 'Vertex Contraction
+        and Graph Gluing', (1): intergroup conductances add, internal edges
+        vanish. The membership matrix S lifts group potentials to vertices;
+        the new Laplacian is S.T L S, not a similarity/basis transformation.
+        """
+        adjacency = self._undirected_couplings()
+        if not isinstance(partition, Mapping):
+            raise TypeError("partition must map new vertex labels to member sequences")
+        labels = tuple(partition)
+        index = {label: i for i, label in enumerate(self.rows.labels)}
+        groups, seen = [], set()
+        for label in labels:
+            members = partition[label]
+            if isinstance(members, (str, bytes, set, frozenset)):
+                raise TypeError("partition members must be ordered iterables of vertex labels")
+            members = tuple(members)
+            if not members:
+                raise ValueError("partition groups must be nonempty")
+            group = []
+            for member in members:
+                if member not in index:
+                    raise ValueError("partition contains an unknown vertex")
+                if member in seen:
+                    raise ValueError("each vertex must occur exactly once in partition")
+                seen.add(member)
+                group.append(index[member])
+            groups.append(group)
+        if seen != set(index):
+            raise ValueError("partition must cover every vertex, including isolates")
+        axis = MatrixAxis(basis=Basis(labels, space=Space(
+            f"{self.rows.space.name}: contracted vertices", len(labels))))
+        s = np.zeros((len(index), len(groups)))
+        couplings = np.zeros((len(groups), len(groups)))
+        for i, group in enumerate(groups):
+            s[group, i] = 1
+            for j, other in enumerate(groups):
+                if i != j:
+                    # Sum only cross-group weights. S.T L S would subtract
+                    # potentially huge internal contributions and lose small
+                    # external couplings; internal loops have no role here.
+                    with np.errstate(over="ignore", invalid="ignore"):
+                        couplings[i, j] = adjacency[np.ix_(group, other)].sum()
+        reduced = self._from_graph_couplings(couplings, axis)
+        membership = LabeledMatrix(s, rows=self.rows, columns=axis,
+                                   kind=MatrixKind.OPERATOR, tolerance=self.tolerance)
+        return ContractionResult(reduced, membership)
+
     def eliminate(self, keep):
         """Eliminate internal vertices, preserving resistance on ordered keep.
 
@@ -401,6 +494,18 @@ class Laplacian(LabeledMatrix):
         influence = LabeledMatrix(values, rows=internal_axis, columns=selected_axis,
                                   kind=MatrixKind.OPERATOR, tolerance=self.tolerance)
         return DirichletResult(influence, self.rows, pi, ii)
+
+
+@dataclass(frozen=True, eq=False)
+class ContractionResult:
+    """Contracted graph and labeled membership S (source rows, group columns).
+
+    S lifts potentials, f_source=S f_groups; S.T maps vertex coefficients
+    to group coefficients. This is vertex identification, not a basis change.
+    """
+
+    laplacian: Laplacian
+    membership_matrix: LabeledMatrix
 
 
 @dataclass(frozen=True, eq=False)

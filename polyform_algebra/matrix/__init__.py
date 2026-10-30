@@ -2,7 +2,7 @@
 
 from .context import MatrixAxis, MatrixKind, MatrixRepresentation, LabeledMatrix
 from ._numeric import MatrixTolerance
-from .laplacian import Laplacian, DirichletResult, EliminationResult
+from .laplacian import Laplacian, DirichletResult, EliminationResult, ContractionResult
 from .results import (
     VertexValues, CircumsphereResult, SpanningTreeCentralityResult,
     EigenvectorCentralityResult, AnnihilatorsResult, BalancingResult,
@@ -11,4 +11,4 @@ from .results import (
 __all__ = ["MatrixAxis", "MatrixKind", "MatrixRepresentation", "MatrixTolerance",
            "LabeledMatrix", "Laplacian", "DirichletResult", "EliminationResult", "VertexValues",
            "CircumsphereResult", "SpanningTreeCentralityResult", "EigenvectorCentralityResult",
-           "AnnihilatorsResult", "BalancingResult"]
+           "AnnihilatorsResult", "BalancingResult", "ContractionResult"]

@@ -259,6 +259,74 @@ equations (3), (7), (8), the weighted path and disconnected cases, v5 revision
 `d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`. The corresponding Russian formulas
 agree. Directed extensions discussed in the note remain outside this stage.
 
+## Induced subgraphs and vertex contraction
+
+```python
+induced = lap.induced_subgraph(keep=["a", "b"])
+contraction = lap.contract({"a": ["a", "x"], "b": ["y", "b"]})
+contracted = contraction.laplacian
+membership = contraction.membership_matrix
+```
+
+These methods currently require an undirected Laplacian (symmetry within the
+stored tolerance). Directed variants are deferred. They preserve the input
+matrix kind and tolerance and do not modify the source. New vertex contexts use
+the existing `Basis` and `Space` classes. Nonnegative conductances are required
+strictly: tolerated positive off-diagonal Laplacian entries are rejected instead
+of silently clipped. Results must be finite and symmetric within tolerance.
+
+`induced_subgraph(keep)` returns a `Laplacian` on the ordered subset. It selects
+`A_PP` and recomputes the degrees from retained edges. Merely selecting `L_PP`
+would incorrectly keep contributions from deleted edges on the diagonal.
+Distinct known labels are required; bare strings and sets are rejected. Empty
+subsets, isolates and disconnected outputs are valid. There is no requirement
+to retain a vertex from every component. Unlike elimination, this operation
+does not preserve the original resistance between retained vertices.
+
+`contract(partition)` returns an immutable `ContractionResult`. `partition` is
+a mapping from new vertex labels to nonempty ordered iterables of original
+labels. Its iteration order fixes the output axes. It must cover every original
+vertex exactly once, including isolates; unaffected vertices must be supplied
+as singleton groups. Empty partitions are valid only for an empty source.
+Members need not be adjacent or belong to the same connected component.
+Internal edges disappear; conductances between groups are summed. Output labels
+identify groups even if an original label is reused; they are not automatically
+the original points in their original metric.
+
+The labeled `membership_matrix` S has source vertices as rows and new groups as
+columns, with one 1 per source row. Its row axis is the original axis, and its
+column axis is shared with the contracted Laplacian. Thus it records the entire
+partition without depending on later mutation of the input mapping.
+For group potentials g, `S g` is the original-vertex field constant on each group.
+The contracted Laplacian satisfies `L_new=S.T L S`, and therefore
+`g.T L_new g=(S g).T L (S g)`. For vertex coefficients the identification map is
+`S.T`, preserving their affine sum. This is a graph identification, not a
+similarity transformation or an invertible change of basis.
+
+The implementation sums only cross-group conductances, then builds new degrees.
+It avoids subtraction of large internal contributions in the literal matrix
+product `S.T L S`. Internal loops are discarded before summation; nonfinite
+cross-group sums or degrees raise an error. No inversion or numerical rank test
+is needed. Identifying vertices in separate components may glue those components;
+isolated groups remain explicitly represented.
+
+Run `python -m examples.graph_operations_pandas` for the weighted path
+`a-x-y-b` with conductances 2, 1, 3, comparing all three operations in DataFrames:
+
+| Operation | Resulting conductance | Effective resistance |
+|---|---|---|
+| Induced subgraph on a,b | 0 | +inf |
+| Contraction of {a,x}, {y,b} | 1 | 1 |
+| Elimination of x,y | 6/11 | 11/6, as in the original path |
+
+Sources read from v5 on 2026-10-30:
+[Vertex Contraction and Graph Gluing](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Spaces/Vertex%20Contraction%20and%20Graph%20Gluing.md),
+English revision 6, translated_revision 4, Russian revision 4; equation (1),
+the three-way comparison, nonadjacent contraction and gluing examples.
+The language revisions differ, but the definitions and examples used here agree.
+[Vertex Elimination and Induced Couplings](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Spaces/Vertex%20Elimination%20and%20Induced%20Couplings.md),
+revision 5, supplies the weighted-path comparison.
+
 ## Vertex elimination (Kron reduction)
 
 ```python
