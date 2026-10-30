@@ -28,6 +28,10 @@ with explicit strong-connectivity checks and separate componentwise normalizatio
 Sphere and centrality methods provide explicit componentwise results;
 singleton tree centrality has scores=None, while singleton eigenvector
 centrality has score one and eigenvalue zero.
+`eliminate(keep)` now provides undirected vertex elimination and its Dirichlet
+data. Every component must meet the retained set; discarding unanchored whole
+components and directed elimination remain deferred. The response preserves
+retained resistance, harmonic energy and response, with explicit vertex ordering.
 Alternative balancing normalizations (such as preserving total flow), additive
 balancing and transfer of directed metric parameters back to the original graph
 remain outside the implemented contract. Balancing does not remove the directed
@@ -51,7 +55,7 @@ Reference notes for these stages and further work:
 | Numerical coordinates | General bi-/di-coordinate operations, Series import and explicit transition objects reusing Basis links. VertexValues and strict Series export already cover the implemented scalar vertex results. | Nonorthogonal basis: d=G b, with invertibility checked on the chosen span. |
 | Metric restriction and unique projections | General embeddings, linear/affine subspaces and nonsingular restricted metric solves beyond the implemented graph Dirichlet problem. | Orthogonal residual in general coordinates; singular restriction rejected. |
 | Isotropic extension | Distinguished z, vertex Gramian -R/2 and extended Gramian, locality and affine weight. | Nonsingular ambient metric with a null vector; degenerate restriction to z-perp. |
-| Graph operations | Separate induced-subgraph, elimination and contraction methods. | Star elimination preserves leaf resistance; induced deletion and contraction produce distinct results. |
+| Graph operations | Induced-subgraph and contraction methods remain to implement; undirected elimination is implemented. | Compare induced deletion and contraction with the implemented resistance-preserving star elimination. |
 | Polyform adapters | Explicit Basis and vertex set for coefficient import/export; preserve isolates and signed Greenian coefficients. | Symmetric vector matrix roundtrip through supported pair-square forms. Directed bilinear export must remain unsupported. |
 | Sparse storage | Select sparse backend and bounded-memory operations; dense inverses are not scalable. | Same small cases as dense backend plus memory checks on a large sparse graph. |
 | Parallel graph edges | Explicit aggregation and provenance policy; currently rejected. | Sum of conductances with all node/edge ordering decisions documented. |

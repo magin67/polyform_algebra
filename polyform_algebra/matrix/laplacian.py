@@ -302,6 +302,43 @@ class Laplacian(LabeledMatrix):
                 scores, axis=graph.rows, name="eigenvector_centrality")))
         return tuple(results) if componentwise else results[0]
 
+    def eliminate(self, keep):
+        """Eliminate internal vertices, preserving resistance on ordered keep.
+
+        PMG 'Vertex Elimination and Induced Couplings', equations (4)-(6).
+        Reuse the unique Dirichlet solve B=-solve(L_II, L_IP), then form
+        L_PP+L_PI B. Every component must contain a retained vertex.
+        The source is unchanged; directed elimination is not supported yet.
+        """
+        problem = self.dirichlet(keep)
+        a = self._array()
+        pi, ii = problem._selected_indices, problem._internal_indices
+        if not ii:
+            reduced = Laplacian(a[np.ix_(pi, pi)], rows=problem.influence_matrix.columns,
+                                kind=self.kind, tolerance=self.tolerance)
+            return EliminationResult(reduced, problem)
+        with np.errstate(over="ignore", invalid="ignore"):
+            response = a[np.ix_(pi, pi)] + a[np.ix_(pi, ii)] @ problem.influence_matrix._array()
+        if not np.isfinite(response).all():
+            raise ValueError("elimination response exceeds the finite numeric range")
+        # Off-diagonal entries add induced conductances without cancellation.
+        # Rebuild degrees from those couplings: direct diagonal subtraction
+        # can leave a spurious response when only one vertex remains.
+        values = response.copy()
+        np.fill_diagonal(values, 0)
+        values = values + (values.T - values) / 2
+        with np.errstate(over="ignore", invalid="ignore"):
+            np.fill_diagonal(values, -values.sum(axis=1))
+        # Allow only corrections within the input row's numerical scale,
+        # never conceal an inaccurate solve by repairing its row sums.
+        scales = np.max(np.abs(a[list(pi)]), axis=1)
+        if (not np.isfinite(values).all() or np.any(
+                np.abs(values - response) > self.tolerance.threshold(scales)[:, None])):
+            raise ValueError("elimination response failed symmetry or zero-sum checks")
+        reduced = Laplacian(values, rows=problem.influence_matrix.columns,
+                            kind=self.kind, tolerance=self.tolerance)
+        return EliminationResult(reduced, problem)
+
     def dirichlet(self, selected):
         """Return influence and harmonic extension for an ordered vertex subset.
 
@@ -364,6 +401,18 @@ class Laplacian(LabeledMatrix):
         influence = LabeledMatrix(values, rows=internal_axis, columns=selected_axis,
                                   kind=MatrixKind.OPERATOR, tolerance=self.tolerance)
         return DirichletResult(influence, self.rows, pi, ii)
+
+
+@dataclass(frozen=True, eq=False)
+class EliminationResult:
+    """Response Laplacian and the Dirichlet data linking it to the source.
+
+    dirichlet.influence_matrix contains bi-coordinates of internal projections;
+    dirichlet.extend restores a harmonic field in the original vertex order.
+    """
+
+    laplacian: Laplacian
+    dirichlet: "DirichletResult"
 
 
 @dataclass(frozen=True, eq=False)

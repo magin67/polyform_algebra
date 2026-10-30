@@ -259,6 +259,62 @@ equations (3), (7), (8), the weighted path and disconnected cases, v5 revision
 `d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`. The corresponding Russian formulas
 agree. Directed extensions discussed in the note remain outside this stage.
 
+## Vertex elimination (Kron reduction)
+
+```python
+result = lap.eliminate(keep=["a", "b", "c"])
+reduced = result.laplacian
+coordinates = result.dirichlet.influence_matrix
+full_field = result.dirichlet.extend({"a": 0, "b": 3, "c": 6})
+```
+
+`eliminate(keep)` returns an immutable `EliminationResult` containing the response
+`Laplacian` and the existing `DirichletResult`. The source is unchanged. `keep`
+must be a nonempty ordered iterable of distinct existing labels; bare strings
+and sets are rejected. Its order determines both axes of the response and the
+columns of the influence matrix. Internal rows and extended fields retain the
+original source order. The reduced axes share the selected `Basis`/`Space`
+of the Dirichlet result; its source-axis embedding is retained explicitly.
+The input matrix kind and tolerance are preserved.
+
+For retained vertices P and internal vertices I, the implementation reuses
+`B=-solve(L_II,L_IP)` from `dirichlet()` and forms
+`Lambda=L_PP+L_PI B`. This response matrix preserves effective resistances
+between retained vertices, their response to prescribed values, and the energy
+of harmonic extensions. B contains bi-coordinates of **projections** of internal
+vertices, not representations of those vertices themselves in the retained span.
+This operation is neither induced-subgraph deletion nor vertex contraction.
+
+The current domain is an undirected, nonnegative network (symmetry checked using
+the stored tolerance). Every connected component must meet `keep`, including
+isolated vertices. Uncovered components are rejected rather than silently
+discarded. Components are solved independently by Dirichlet; cross-component
+couplings remain zero and resistance remains infinite. Directed elimination is
+deferred. An unresolved internal block raises an error with no pseudoinverse
+fallback. An empty selection or an empty graph is rejected. Retaining one vertex
+of a connected component gives a zero response; retaining all vertices only
+copies/reorders the input.
+
+Numerically, off-diagonal response entries determine the induced conductances.
+The implementation averages transpose roundoff and rebuilds diagonal degrees
+from those entries, avoiding cancellation artifacts for a single retained vertex.
+Corrections must be within the stored tolerance at each retained input row's
+maximum-entry scale; larger discrepancies or nonfinite results raise an error.
+The resulting matrix undergoes the usual Laplacian validation.
+
+Run `python -m examples.elimination_star_pandas` to display the original star,
+the reduced triangle, projection coordinates, resistances and responses in
+DataFrames. Three unit star edges yield triangle conductances 1/3 and pairwise
+effective resistances 2. A conductance is not generally the reciprocal of the
+pairwise resistance when other paths exist.
+
+Source: [Vertex Elimination and Induced Couplings](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Spaces/Vertex%20Elimination%20and%20Induced%20Couplings.md),
+note revision 5 (2026-10-15), read from v5 on 2026-10-30; equations (3)-(6),
+star/path examples and conditions. The corresponding Russian revision 5 agrees
+on these formulas and limitations. Tests cover resistance, response, energy,
+existing couplings, elimination order, permutations, scaling, bipartite
+compatibility, singleton/all-retained cases, isolates and invalid domains.
+
 ## Circumspheres and spanning-tree centrality
 
 ```python
