@@ -1,12 +1,15 @@
 """Immutable labeled numerical results; pandas stays an optional adapter."""
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import numpy as np
 
 from .context import LabeledMatrix, MatrixAxis
 from ._numeric import MatrixTolerance
+
+if TYPE_CHECKING:
+    from .laplacian import Laplacian
 
 
 @dataclass(frozen=True, eq=False, init=False)
@@ -105,3 +108,15 @@ class AnnihilatorsResult:
     @property
     def right_dimension(self):
         return len(self.right_basis.columns.labels)
+
+
+@dataclass(frozen=True, eq=False)
+class BalancingResult:
+    """Balanced outgoing Laplacian and positive source multipliers of mean one.
+
+    L_bal=diag(multipliers) L. The multipliers allow recovery of the source
+    weights; normalization does not preserve the total weight of the graph.
+    """
+
+    laplacian: "Laplacian"
+    multipliers: VertexValues

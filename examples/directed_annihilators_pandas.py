@@ -62,7 +62,7 @@ def main():
 
     print("\nThe unbalanced example has left=(15/16,12/16,21/16), right=(1,1,1).")
     print("Basis columns are Euclidean-coordinate orthonormal; a multidimensional basis is not canonical.")
-    print("The graph weights have not been changed; balancing is a separate next step.")
+    print("The graph weights have not been changed; use balance() for the separate balancing operation.")
 
 
 if __name__ == "__main__":

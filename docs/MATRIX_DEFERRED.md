@@ -16,28 +16,28 @@ This ledger distinguishes mathematical decisions from scheduled implementation.
 
 ## Known mathematics, planned small implementation stages
 
-### Planned Laplacian methods
+### Implemented Laplacian stages and remaining boundaries
 
 Laplacian and its undirected `dirichlet(selected)`, `circumsphere()`,
 `spanning_tree_centrality()` and `eigenvector_centrality()` methods are implemented.
 `annihilators()` now provides labeled left/right numerical kernel bases and
 sum-n normalized representatives only in the one-dimensional case, also for
 directed graphs. No graph weights are changed by this operation.
+`balance()` now performs positive source scaling through the left annihilator,
+with explicit strong-connectivity checks and separate componentwise normalization.
 Sphere and centrality methods provide explicit componentwise results;
 singleton tree centrality has scores=None, while singleton eigenvector
 centrality has score one and eigenvalue zero.
-The following methods are planned only; no placeholder calculations or
-unimplemented public methods are introduced by these stages.
-
-| Proposed method | Contract to implement | Acceptance checks |
-|---|---|---|
-| Directed graph balancing (method name to be agreed) | Separate next stage: positive source scaling D_sigma L, using the sum-n left annihilator under strong connectivity. Return original-context multipliers and the balanced graph; specify reducible/component handling. A left vector with zeros does not authorize positive balancing. | Zero row/column sums, preservation of arc support and outgoing proportions, identity on balanced graphs, explicit rejection of unsupported reducible cases. |
+Alternative balancing normalizations (such as preserving total flow), additive
+balancing and transfer of directed metric parameters back to the original graph
+remain outside the implemented contract. Balancing does not remove the directed
+Greenian/resistance boundaries listed above.
 
 Spanning-tree centrality is not an alias for arbitrary forest centrality.
 The latter requires a distribution over forests or a fixed component count
 and a weight convention. Neither is silently inferred from a method name.
 
-Sources for subsequent implementation:
+Reference notes for these stages and further work:
 
 - [Balancing a Directed Graph by Spanning-Tree Potentials](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Balanced%20graphs/Balancing%20a%20Directed%20Graph%20by%20Spanning-Tree%20Potentials.md).
 - [Resistance Radius and Diameter of a Graph](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Metric%20parameters/Resistance%20Radius%20and%20Diameter%20of%20a%20Graph.md).

@@ -457,7 +457,72 @@ balance criterion and “Why positivity matters”; [Balancing a Directed Graph
 by Spanning-Tree Potentials](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Balanced%20graphs/Balancing%20a%20Directed%20Graph%20by%20Spanning-Tree%20Potentials.md),
 normalization and three-participant example. Revision
 `d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661` of v5. Russian and English
-kernel identities agree. The balancing operation remains a separate planned stage.
+kernel identities agree. The separate balancing operation is described below.
+
+## Directed graph balancing
+
+```python
+result = lap.balance()
+balanced = result.laplacian
+multipliers = to_series(result.multipliers)
+original_adjacency = to_dataframe(lap.to_adjacency())
+balanced_adjacency = to_dataframe(balanced.to_adjacency())
+```
+
+`balance(componentwise=False)` returns a frozen `BalancingResult` containing
+a new Laplacian and labeled positive source `multipliers`. It uses the left
+annihilator, normalized by sum(sigma)=n, and computes **L_bal=diag(sigma) L**.
+Equivalently A_bal=diag(sigma) A: all outgoing weights of vertex i are
+multiplied by sigma_i. The result preserves the original axis objects, kind
+and tolerance in the connected case. The input is never modified.
+
+Every positive arc and each source's outgoing allocation proportions are
+preserved. Dividing the output rows by the saved multipliers recovers the
+input. The total weight is generally different: mean-one multipliers do not
+fix total flow. The result is balanced, not necessarily symmetric, and does
+not automatically gain a supported directed Greenian or resistance metric.
+
+The implementation checks strong connectivity by forward and reverse
+reachability on strictly positive arcs. It does not infer connectivity from
+numerically small entries of an annihilator. After that, the numerical kernel
+must be one-dimensional and its normalized left vector strictly positive.
+Unresolved rank/positivity raises ValueError. Balancing uses the stored
+MatrixTolerance; construct a matrix with a suitable tolerance when necessary.
+Already balanced inputs (within that tolerance) use unit multipliers and are
+returned numerically unchanged, so repeated balancing introduces no extra drift.
+
+Unlike generic Laplacian storage, this support-preserving transformation
+requires genuinely nonpositive off-diagonal entries and nonnegative diagonal
+entries: it rejects even tolerated sign errors instead of clipping them.
+Finite arithmetic and preservation of nonzero entries are checked after
+scaling, and both row and column sums must vanish within tolerance.
+Overflow or underflow that destroys a nonzero entry raises ValueError.
+
+| Input | Default | `componentwise=True` |
+|---|---|---|
+| Strongly connected graph | One result, mean multiplier one | Tuple containing that result |
+| Disconnected, each weak component strongly connected | ValueError requesting component mode | One result per weak component, each with independent mean-one normalization |
+| A weak component that is not strongly connected | ValueError: positive arc-preserving balancing is impossible | Same error; SCCs with arcs between them are not balanced separately |
+| Isolated singleton | Identity with multiplier one | Tuple containing that result |
+| Empty graph | ValueError | Empty tuple |
+
+Components are ordered by first vertex occurrence and retain their vertex
+order in new coordinate Space/Basis instances. Singleton and empty behavior
+are API conventions beyond the note's main n>=2 domain. No zero multiplier
+is used to remove outgoing arcs from transient vertices.
+
+Run `python -m examples.directed_balancing_pandas` for original and balanced
+adjacency/Laplacian DataFrames, the multiplier Series and a table of incoming
+and outgoing totals. Its assertions check balance, arc preservation, unchanged
+outgoing proportions and recovery. For the note's example, multipliers are
+(15/16,12/16,21/16); balanced vertex totals are (45/16,36/16,42/16), and total
+weight changes from 8 to 123/16.
+
+Source: [Balancing a Directed Graph by Spanning-Tree Potentials](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Balanced%20graphs/Balancing%20a%20Directed%20Graph%20by%20Spanning-Tree%20Potentials.md),
+equations (1)-(6), three-participant example and impossibility conditions,
+v5 revision `e28771c349cb54d84040702e7dc0cd345b57fd0f`. The Russian and English
+formulas agree. Tests independently compare the normalized linear solve,
+equal rooted spanning-tree potentials, idempotence and reversible row scaling.
 
 ## Tolerances and conditioning
 

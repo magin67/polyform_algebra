@@ -16,7 +16,7 @@ from . import _numeric as num
 from .context import LabeledMatrix, MatrixAxis, MatrixKind
 from .results import (
     CircumsphereResult, SpanningTreeCentralityResult,
-    EigenvectorCentralityResult, AnnihilatorsResult, VertexValues,
+    EigenvectorCentralityResult, AnnihilatorsResult, BalancingResult, VertexValues,
 )
 
 
@@ -97,6 +97,76 @@ class Laplacian(LabeledMatrix):
         return AnnihilatorsResult(
             labeled_basis(left_values, "left", self.rows),
             labeled_basis(right_values, "right", self.columns), left, right, tol)
+
+    def balance(self, *, componentwise=False):
+        """Balance outgoing weights by the positive, sum-n left annihilator.
+
+        PMG 'Balancing a Directed Graph by Spanning-Tree Potentials', (1)-(3).
+        Positive scaling preserves every arc and each source's allocation
+        proportions. It changes the graph, not merely its coordinates.
+        Each weak component must be strongly connected; componentwise mode
+        returns separate results with independent mean-one normalizations.
+        """
+        a = self._array()
+        if not isinstance(componentwise, bool):
+            raise TypeError("componentwise must be a bool")
+        off = a.copy()
+        np.fill_diagonal(off, 0)
+        # Generic Laplacian validation accepts roundoff-sized sign errors.
+        # This operation promises support preservation, so do not clip them.
+        if np.any(off > 0) or np.any(np.diag(a) < 0):
+            raise ValueError("balancing requires nonnegative conductances without sign corrections")
+        support = off < 0
+        groups = num.components(support | support.T)
+        if not componentwise and len(groups) != 1:
+            raise ValueError("a nonempty connected graph is required; use componentwise=True")
+
+        def reaches_all(arcs):
+            reached, pending = {0}, [0]
+            while pending:
+                vertex = pending.pop()
+                for neighbor in np.flatnonzero(arcs[vertex]):
+                    if neighbor not in reached:
+                        reached.add(neighbor)
+                        pending.append(neighbor)
+            return len(reached) == len(arcs)
+
+        results = []
+        for group in groups:
+            arcs = support[np.ix_(group, group)]
+            # Forward and reverse reachability from one vertex prove strong
+            # connectivity. Never infer it from a nearly positive SVD vector.
+            if not reaches_all(arcs) or not reaches_all(arcs.T):
+                raise ValueError("positive support-preserving balancing requires strongly connected weak components")
+            if len(groups) == 1:
+                graph = self
+            else:
+                labels = tuple(self.rows.labels[i] for i in group)
+                axis = MatrixAxis(basis=Basis(labels, space=Space(
+                    f"{self.rows.space.name}: component {len(results)}", len(labels))))
+                graph = Laplacian(a[np.ix_(group, group)], rows=axis,
+                                  kind=self.kind, tolerance=self.tolerance)
+            annihilators = graph.annihilators()
+            if annihilators.left is None:
+                raise ValueError("balancing annihilator is unresolved at this tolerance; choose a smaller tolerance")
+            sigma = annihilators.left.to_numpy()
+            if np.any(sigma <= 0):
+                raise ValueError("positive balancing multipliers are numerically unresolved")
+            # Identity on an already balanced input (within stored tolerance)
+            # also prevents repeated balancing from introducing extra drift.
+            if graph.vector_type() == "vector":
+                sigma = np.ones(len(group))
+            with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+                values = sigma[:, None] * graph._array()
+            if not np.isfinite(values).all() or not np.array_equal(values != 0, graph._array() != 0):
+                raise ValueError("balancing exceeds numeric range or loses nonzero entries")
+            balanced = Laplacian(values, rows=graph.rows, columns=graph.columns,
+                                 kind=graph.kind, tolerance=graph.tolerance)
+            if balanced.vector_type() != "vector":
+                raise ValueError("balanced Laplacian failed zero row/column sum checks")
+            results.append(BalancingResult(balanced, VertexValues(
+                sigma, axis=graph.rows, name="balancing_multiplier")))
+        return tuple(results) if componentwise else results[0]
 
     def _metric_components(self, componentwise):
         """Select finite connected metric domains without relating distinct components."""

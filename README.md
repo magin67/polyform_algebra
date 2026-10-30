@@ -60,6 +60,7 @@ assert Polyform.zero().exp() == Polyform.one()
 | `examples.dirichlet_two_vertices_pandas` | Две выбранные вершины пути: би-координаты проекций в DataFrame и решение задачи Дирихле (требуется pandas) |
 | `examples.circumsphere_centrality_pandas` | Путь и звезда: радиус, координаты центра, остовная и собственная центральности рядом в DataFrame; несвязный граф (требуется pandas) |
 | `examples.directed_annihilators_pandas` | Левое и правое ядра лапласиана: балансовый, несбалансированный граф и многомерный случай, вывод в DataFrame (требуется pandas) |
+| `examples.directed_balancing_pandas` | Балансировка орграфа: исходные и итоговые матрицы в DataFrame, множители и проверка баланса (требуется pandas) |
 
 Пошаговое пояснение и ожидаемые результаты:
 [вариации связей треугольника на Python](docs/INTRODUCTORY_VARIATIONS.md).
