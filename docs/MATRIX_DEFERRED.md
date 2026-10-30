@@ -18,12 +18,11 @@ This ledger distinguishes mathematical decisions from scheduled implementation.
 
 | Capability | What remains | Acceptance example |
 |---|---|---|
-| Incidence and adjacency objects | Explicit edge basis, oriented endpoints, conductances, representation tags and adapter methods. Current NetworkX import constructs L directly. | L=B diag(c) B.T and invariance under reversal of edge orientation. |
+| Incidence objects | Explicit edge basis, oriented endpoints, conductances and adapter methods. Adjacency and its Laplacian conversions are implemented. | L=B diag(c) B.T and invariance under reversal of edge orientation. |
 | Numerical coordinates | Dedicated bi-/di-coordinate results, Series adapters and explicit transition objects reusing Basis links. | Nonorthogonal basis: d=G b, with invertibility checked on the chosen span. |
 | Metric restriction and unique projections | Embeddings, linear/affine subspaces and nonsingular restricted metric solves. | Orthogonal residual in the path midpoint example; singular restriction rejected. |
 | Isotropic extension | Distinguished z, vertex Gramian -R/2 and extended Gramian, locality and affine weight. | Nonsingular ambient metric with a null vector; degenerate restriction to z-perp. |
 | Graph operations | Separate induced-subgraph, elimination and contraction methods. | Star elimination preserves leaf resistance; induced deletion and contraction produce distinct results. |
-| Bipartite reduction | Conductance table H, zero-column policy, preservation of zero rows and original degrees. | Pair coefficients sum H_ix H_jx/d_x; agreement with Schur complement. |
 | Polyform adapters | Explicit Basis and vertex set for coefficient import/export; preserve isolates and signed Greenian coefficients. | Symmetric vector matrix roundtrip through supported pair-square forms. Directed bilinear export must remain unsupported. |
 | Sparse storage | Select sparse backend and bounded-memory operations; dense inverses are not scalable. | Same small cases as dense backend plus memory checks on a large sparse graph. |
 | Parallel graph edges | Explicit aggregation and provenance policy; currently rejected. | Sum of conductances with all node/edge ordering decisions documented. |

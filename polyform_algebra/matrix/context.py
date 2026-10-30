@@ -22,6 +22,8 @@ class MatrixKind(Enum):
 class MatrixRepresentation(str, Enum):
     """Declared meanings, validated rather than inferred from numerical coincidences."""
     GENERIC = "generic"
+    ADJACENCY = "adjacency"
+    BIPARTITE = "bipartite"
     LAPLACIAN = "laplacian"
     GREENIAN = "greenian"
     RESISTANCE = "resistance"
@@ -110,11 +112,25 @@ class LabeledMatrix(MatrixOperations):
             object.__setattr__(self, key, value)
         groups = None
         if representation != "generic":
-            self._require_same_axes()
-            for label in rows.labels:
+            if representation == "bipartite":
+                if rows.space is columns.space:
+                    raise ValueError("bipartite axes require distinct Space instances")
+            else:
+                self._require_same_axes()
+            for label in rows.labels + columns.labels:
                 if hasattr(label, "affine_weight") and label.affine_weight != 1:
                     raise ValueError("network representations require vertex labels of affine weight one")
-            if representation == "laplacian":
+            if representation in ("adjacency", "bipartite"):
+                if kind != MatrixKind.PAIRWISE:
+                    raise ValueError("adjacency and bipartite data require pairwise role")
+                if np.any(array < 0):
+                    raise ValueError("coupling coefficients must be nonnegative")
+                if representation == "adjacency":
+                    if np.any(np.diag(array) != 0):
+                        raise ValueError("adjacency requires zero diagonal; loops are unsupported")
+                    if num.symmetric(array, tolerance):
+                        groups = num.components((array > 0) | (array.T > 0))
+            elif representation == "laplacian":
                 if kind not in (MatrixKind.OPERATOR, MatrixKind.FORM_COEFFICIENTS):
                     raise ValueError("laplacian requires operator or form-coefficient role")
                 num.validate_laplacian(array, tolerance)
@@ -169,7 +185,7 @@ class LabeledMatrix(MatrixOperations):
         return tuple(tuple(self.rows.labels[i] for i in group) for group in self._components)
 
     def reordered(self, *, rows=None, columns=None):
-        """Full explicit permutations; named networks require the same on both axes."""
+        """Full permutations; bipartite axes may be reordered independently."""
         self._array(finite=False)
         rb = self.rows.basis.reordered(self.rows.labels if rows is None else rows)
         cb = self.columns.basis.reordered(self.columns.labels if columns is None else columns)

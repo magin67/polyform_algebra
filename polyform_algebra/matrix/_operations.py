@@ -116,7 +116,7 @@ class MatrixOperations:
         return self._new(self._array(finite=False), kind=kind, representation=representation)
 
     def _require_network(self):
-        if self.representation == "generic":
+        if self.representation in ("generic", "bipartite"):
             raise ValueError("declare a network representation before semantic conversion")
         if not self.is_symmetric():
             raise NotImplementedError("directed Greenian/resistance conventions are deferred; see MATRIX_DEFERRED.md")
@@ -132,6 +132,8 @@ class MatrixOperations:
     def to_greenian(self):
         """Dispatch by representation, with a separate centroid gauge per component."""
         from .context import MatrixKind
+        if self.representation == "adjacency":
+            return self.to_laplacian().to_greenian()
         self._require_network()
         if self.representation == "laplacian":
             for group in self._components:
@@ -147,15 +149,68 @@ class MatrixOperations:
         return self._new(values, kind=MatrixKind.FORM_COEFFICIENTS, representation="greenian")
 
     def to_laplacian(self):
-        """Recover a symmetric network and validate its off-diagonal signs."""
+        """Use outgoing degrees for adjacency; recover symmetric inverse networks."""
         from .context import MatrixKind
         if self.representation == "laplacian":
             values = self._array()
+        elif self.representation == "adjacency":
+            a = self._array()
+            values = np.diag(a.sum(axis=1)) - a
         else:
             self._require_network()
             green = self.to_greenian()
             values = green._blockwise(lambda block: num.pinv(block, self.tolerance))
         return self._new(values, kind=MatrixKind.FORM_COEFFICIENTS, representation="laplacian")
+
+    def to_adjacency(self):
+        """Return loopless conductances; A_ij=-L_ij for distinct vertices.
+
+        Laplacian validation permits sign errors within tolerance. Clip only
+        those negative conductances, never small positive couplings.
+        """
+        from .context import MatrixKind
+        if self.representation == "adjacency":
+            values = self._array()
+        else:
+            values = np.maximum(-self.to_laplacian()._array(), 0)
+            np.fill_diagonal(values, 0)
+        return self._new(values, kind=MatrixKind.PAIRWISE, representation="adjacency")
+
+    def to_unipartite(self, space, *, representation="laplacian"):
+        """Eliminate the opposite part, preserving the retained resistance metric.
+
+        PMG Spaces, 'Couplings Within One Part of a Bipartite Graph', (3), (6):
+        A_pq=sum_x H_px H_qx/d_x for p != q. Zero-degree eliminated
+        vertices contribute nothing; retained isolated vertices remain.
+        Select the retained Space by identity, not by its display name.
+        """
+        from .context import MatrixKind
+        if self.representation != "bipartite":
+            raise ValueError("to_unipartite requires a declared bipartite matrix")
+        if representation not in ("laplacian", "adjacency"):
+            raise ValueError("output representation must be laplacian or adjacency")
+        h = self._array()
+        if space is self.rows.space:
+            axis = self.rows
+        elif space is self.columns.space:
+            axis, h = self.columns, h.T
+        else:
+            raise ValueError("select one of the matrix axis Space instances")
+        # Scale each column before summation: this avoids overflowing degrees
+        # or products for large finite conductances. Zero columns stay zero.
+        maxima = np.max(h, axis=0, initial=0)
+        active = maxima > 0
+        h = h[:, active]
+        scaled = h / maxima[active]
+        shares = scaled / scaled.sum(axis=0)
+        values = shares @ h.T
+        # Both products are mathematically equal; average roundoff without
+        # overflowing their sum. The diagonal is not a graph self-loop.
+        np.fill_diagonal(values, 0)
+        values = values + (values.T - values) / 2
+        adjacency = self._new(values, rows=axis, columns=axis,
+                              kind=MatrixKind.PAIRWISE, representation="adjacency")
+        return adjacency if representation == "adjacency" else adjacency.to_laplacian()
 
     def to_resistance(self):
         """Within-component D(Gr), +inf between components, zero self-resistance."""

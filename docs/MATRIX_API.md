@@ -55,18 +55,20 @@ FORM_COEFFICIENTS, PAIRWISE. It records a role, not a proof of symmetry or
 positive definiteness. A metric role can carry an indefinite matrix.
 
 `representation` accepts the strings (or MatrixRepresentation members)
-`generic`, `laplacian`, `greenian`, `resistance`. Meaning is never inferred from
+`generic`, `adjacency`, `bipartite`, `laplacian`, `greenian`, `resistance`. Meaning is never inferred from
 values. `with_representation(name, kind=...)` explicitly declares and validates
 meaning on a new object. These are representations of one class, not subclasses.
 
 | Declaration | Validation and interpretation |
 |---|---|
+| adjacency | Finite nonnegative square conductances with exactly zero diagonal; directed data is allowed. Role is PAIRWISE. |
+| bipartite | Finite nonnegative conductance table between two distinct Space instances, possibly rectangular. Role is PAIRWISE. |
 | laplacian | Finite square outgoing Laplacian: zero row sums, nonpositive off-diagonal entries, nonnegative diagonal. Directed matrices are accepted. Role is OPERATOR or FORM_COEFFICIENTS. |
 | greenian | Symmetric centered PSD matrix whose pseudoinverse is a nonnegative-conductance network Laplacian, with rank compatible with components. Role is METRIC or FORM_COEFFICIENTS. |
 | resistance | Symmetric nonnegative zero-diagonal finite blocks, each reconstructing a connected network. Positive infinity separates blocks. Role is PAIRWISE. |
 | generic | Shape and numerical storage only; no network claim. |
 
-Named representations require the same Space and ordered labels on both axes.
+Named representations except bipartite require the same Space and ordered labels on both axes.
 If labels are algebra Elements, they must have affine weight one. Empty networks
 are allowed; singleton components have zero Laplacian/Greenian/self-resistance.
 
@@ -110,6 +112,7 @@ Semantic dispatch:
 
 | Source | to_greenian() | to_resistance() | to_laplacian() |
 |---|---|---|---|
+| adjacency | Through Laplacian (symmetric only) | Through Laplacian (symmetric only) | diag(A1)-A, also directed |
 | symmetric Laplacian | Componentwise pseudoinverse | Through Greenian | New equivalent object |
 | Greenian | New equivalent object | Componentwise distance | Componentwise pseudoinverse |
 | resistance | Componentwise deviation | New equivalent object | Through Greenian |
@@ -120,7 +123,7 @@ reconstruction because its inverse has a positive off-diagonal entry. A general
 Euclidean distance table is not necessarily network resistance.
 
 Semantic conversions return canonical roles: FORM_COEFFICIENTS for Laplacian
-and Greenian, PAIRWISE for resistance. Thus converting an operator-role
+and Greenian, PAIRWISE for resistance and adjacency. Thus converting an operator-role
 Laplacian to Laplacian preserves its numbers and vertex representation but
 explicitly presents them as form coefficients.
 
@@ -131,6 +134,54 @@ Semantic conversions process finite blocks. Basic numerical operations reject
 infinite data; they cannot silently combine those blocks. For directed
 Laplacians, conversion to themselves is supported; Greenian/resistance conversion
 raises NotImplementedError until directed conventions are implemented.
+
+`to_adjacency()` returns a new adjacency matrix from adjacency or any supported
+Laplacian conversion. Off-diagonal entries are -L_ij and the diagonal is zero.
+Self-loops are unsupported because L=diag(A1)-A cannot recover them. Negative
+conductances arising from tolerated Laplacian sign errors are clipped to zero;
+positive conductances, however small, are retained. Roundtrips are therefore
+exact algebraically for valid loopless inputs, and numerical within tolerance
+for inverse-derived Laplacians.
+
+## Bipartite participation tables
+
+`H.to_unipartite(space, representation="laplacian")` retains one axis Space
+and eliminates the opposite part. Select the actual `H.rows.space` or
+`H.columns.space` instance; equal names do not identify spaces. The input must
+declare `representation="bipartite"`. Output may be `laplacian` (default) or
+`adjacency`, with the retained axis on both sides in its original order.
+
+For retained rows P and eliminated columns X, d_x=sum_p H_px and
+A_pq=sum_x H_px H_qx/d_x for p != q. The diagonal of A is zero.
+Equivalently L_P=diag(H1)-H diag(d)^-1 H.T on nonempty columns. Retaining
+columns applies the same formula to H.T. The implementation builds L from
+off-diagonal couplings to avoid subtractive cancellation in its diagonal.
+Column scaling avoids overflow in intermediate products and degrees; results
+outside finite float64 range still raise an error.
+
+Zero columns contribute nothing; zero retained rows remain isolated. Empty
+parts and a single retained vertex are supported. Disconnected inputs are
+processed without coupling their components. This is elimination preserving
+effective resistances, not induced-subgraph selection or common-neighbor
+counts H H.T. Counts, hours, or other data become conductances only through
+the application's modeling choice. Column normalization changes that model.
+
+Original activity totals remain available from the unchanged H: sums of its
+rows/columns. They are not the reduced graph's degrees and cannot generally
+be recovered from the output. No activity metadata is silently attached to
+the reduced matrix. Keep H when both statistics are needed.
+
+See the executable [bipartite example](../examples/bipartite_couplings.py).
+The existing strict pandas adapter accepts `representation="bipartite"` with
+explicit row and column contexts; `to_dataframe()` exports the reduced matrix.
+For NetworkX use `to_networkx(result.to_laplacian())`.
+
+Source: [Couplings Within One Part of a Bipartite Graph](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Spaces/Couplings%20Within%20One%20Part%20of%20a%20Bipartite%20Graph.md),
+equations (3), (6) and calculation limitations, v5 revision
+`f4e80ba6d7bec8d3e32774b957fe921bf76de264`. Russian and English reduction
+formulas and worked examples agree. Adjacency conventions follow the same
+revision's Introduction note, “Laplacian: graph, electrical network and
+quadratic form”, section “The Laplacian matrix”.
 
 ## Tolerances and conditioning
 
@@ -152,7 +203,8 @@ a smaller tolerance or higher-precision work outside this float64 layer.
 
 `reordered(rows=..., columns=...)` requires full permutations. It preserves
 Space identities, role and representation; named networks require the same
-permutation on both axes. Selecting a subset, taking a subgraph, and eliminating
+permutation on both axes, except bipartite tables whose two parts can be
+permuted independently. Selecting a subset, taking a subgraph, and eliminating
 vertices are separate operations, not aliases of reordering.
 
 `change_basis(rows=axis, columns=axis, row_transition=M_r,
