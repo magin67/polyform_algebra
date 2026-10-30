@@ -1,4 +1,4 @@
-"""One matrix class with explicit roles, representations and axis context."""
+"""Shared matrix storage with explicit roles, representations and axis context."""
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -167,7 +167,11 @@ class LabeledMatrix(MatrixOperations):
                                self.tolerance.rtol if rtol is None else rtol)
 
     def _new(self, values, *, kind=None, representation="generic", rows=None, columns=None):
-        return LabeledMatrix(values, rows=self.rows if rows is None else rows,
+        matrix_class = LabeledMatrix
+        if representation == "laplacian":
+            from .laplacian import Laplacian
+            matrix_class = Laplacian
+        return matrix_class(values, rows=self.rows if rows is None else rows,
                              columns=self.columns if columns is None else columns,
                              kind=self.kind if kind is None else kind,
                              representation=representation, tolerance=self.tolerance)

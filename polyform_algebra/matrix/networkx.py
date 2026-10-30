@@ -4,7 +4,8 @@ from numbers import Real
 import numpy as np
 from .._core.basis import Basis
 from .._core.space import Space
-from .context import MatrixAxis, MatrixKind, LabeledMatrix
+from .context import MatrixAxis, MatrixKind
+from .laplacian import Laplacian
 
 
 def from_networkx(graph, *, vertices=None, weight="weight", space=None, tolerance=None):
@@ -33,7 +34,7 @@ def from_networkx(graph, *, vertices=None, weight="weight", space=None, toleranc
         if not graph.is_directed():
             adjacency[index[v], index[u]] = c
     lap = np.diag(adjacency.sum(axis=1)) - adjacency
-    return LabeledMatrix(lap, rows=axis, columns=axis, kind=MatrixKind.FORM_COEFFICIENTS,
+    return Laplacian(lap, rows=axis, columns=axis, kind=MatrixKind.FORM_COEFFICIENTS,
                          representation="laplacian", tolerance=tolerance)
 
 

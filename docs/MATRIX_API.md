@@ -4,7 +4,7 @@ Updated 2026-10-30. This document supersedes the initial proposals in
 [MATRIX_MODULE_DESIGN.md](MATRIX_MODULE_DESIGN.md). Unimplemented behavior and
 open mathematical decisions are tracked in [MATRIX_DEFERRED.md](MATRIX_DEFERRED.md).
 
-## One matrix class, explicit context
+## Shared matrix storage, explicit context
 
 ```python
 from polyform_algebra import Basis, Space
@@ -57,7 +57,8 @@ positive definiteness. A metric role can carry an indefinite matrix.
 `representation` accepts the strings (or MatrixRepresentation members)
 `generic`, `adjacency`, `bipartite`, `laplacian`, `greenian`, `resistance`. Meaning is never inferred from
 values. `with_representation(name, kind=...)` explicitly declares and validates
-meaning on a new object. These are representations of one class, not subclasses.
+meaning on a new object. LabeledMatrix supports all representations; Laplacian
+specializes it for graph operations while reusing the same storage and context.
 
 | Declaration | Validation and interpretation |
 |---|---|
@@ -186,6 +187,77 @@ equations (3), (6) and calculation limitations, v5 revision
 formulas and worked examples agree. Adjacency conventions follow the same
 revision's Introduction note, “Laplacian: graph, electrical network and
 quadratic form”, section “The Laplacian matrix”.
+
+## Laplacian and the Dirichlet problem
+
+`Laplacian(values, rows=axis, columns=None, kind=FORM_COEFFICIENTS,
+tolerance=None)` is a frozen subclass of LabeledMatrix. Omitting columns uses
+the row axis. Its representation is always `laplacian`; numerical, axis and
+role validation are shared with LabeledMatrix. Directed outgoing Laplacians
+remain valid data, but individual methods impose their own applicability checks.
+
+All `.to_laplacian()` conversions now return Laplacian, including conversion
+of an old `LabeledMatrix(..., representation="laplacian")`. Existing base
+constructors remain supported without silently changing their Python class.
+NetworkX import and pandas import with laplacian representation also return
+Laplacian. Reordering retains the specialization. Converting to another
+representation, taking a pseudoinverse or changing basis returns LabeledMatrix;
+an arbitrary basis change does not preserve the network interpretation.
+
+```python
+lap = matrix.to_laplacian()
+problem = lap.dirichlet(selected=["a", "b"])
+coordinates = to_dataframe(problem.influence_matrix)
+values = problem.extend({"a": 0, "b": 11})
+```
+
+`dirichlet(selected)` currently requires an undirected Laplacian (symmetry
+within stored tolerance). Selection is a nonempty ordered iterable of distinct
+existing vertex labels. Bare strings and sets are rejected. Every connected
+component, including an isolated vertex, must contain a selected vertex;
+otherwise the method raises ValueError for nonuniqueness. Directed solves
+raise NotImplementedError. This is a current implementation boundary, not
+a claim that directed Dirichlet problems have no solution.
+
+For selected vertices P and internal vertices I, solve **L_II B = -L_IP**.
+The diagonal of L_II retains all original weighted degrees, including couplings
+to P. This block is not an induced-subgraph Laplacian. The implementation
+solves each component separately with `numpy.linalg.solve`, checks numerical
+rank using MatrixTolerance, and checks nonnegative/unit-sum influence rows
+within tolerance. It never substitutes a pseudoinverse, clips coefficients,
+or renormalizes an inaccurate solution. Unresolved rank or failed checks
+raise ValueError rather than selecting arbitrary constants.
+
+The frozen `DirichletResult` contains:
+
+- `influence_matrix`: generic OPERATOR LabeledMatrix. Rows are internal vertices
+  in source order; columns are selected vertices in the requested order.
+- `selected` and `internal`: label tuples for those axes.
+- `source_axis`: the original vertex axis. The result retains positional
+  embeddings into this axis and detects changes to its underlying Basis.
+- `extend(values)`: a dictionary of scalar values for **all** vertices in
+  source order. Supply a mapping with exactly the selected labels, or a finite
+  one-dimensional list, tuple or NumPy array in selected order. For a pandas
+  Series, pass `series.to_dict()` explicitly to preserve label meaning.
+
+Subset axes reuse Basis with new coordinate Space instances and the original
+labels. They do not assert a new ambient metric or implement general subspace
+embeddings. B's rows describe **projections** of internal vertices onto the
+selected affine span, not representations of those original vertices. Their
+nonnegativity and unit sums follow from this graph's maximum principle.
+With one selected vertex per connected component, extension is constant in
+that component. With all vertices selected, B has shape (0, n). An empty graph
+has no admissible nonempty selection and is rejected.
+
+Run `python -m examples.dirichlet_two_vertices_pandas` to display the weighted
+path a-x-y-b with conductances 2, 1, 3. Its projection rows are (8/11, 3/11)
+and (2/11, 9/11); prescribed a=0, b=11 yields x=3, y=9. pandas is optional
+and can be installed using `python -m pip install pandas`.
+
+Source: [Selected Vertices and the Dirichlet Problem](https://github.com/magin67/pmg-notes/blob/v5/pmg-library/en/Spaces/Selected%20Vertices%20and%20the%20Dirichlet%20Problem.md),
+equations (3), (7), (8), the weighted path and disconnected cases, v5 revision
+`d3b9cb30f8a990ebdc4c46b9cf4deb7f34d7a661`. The corresponding Russian formulas
+agree. Directed extensions discussed in the note remain outside this stage.
 
 ## Tolerances and conditioning
 

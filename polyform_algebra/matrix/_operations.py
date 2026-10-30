@@ -1,4 +1,4 @@
-"""Implementation methods for the single public LabeledMatrix class."""
+"""Shared numerical methods and representation conversions."""
 
 import numpy as np
 from . import _numeric as num
