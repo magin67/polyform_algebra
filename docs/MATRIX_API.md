@@ -172,6 +172,10 @@ be recovered from the output. No activity metadata is silently attached to
 the reduced matrix. Keep H when both statistics are needed.
 
 See the executable [bipartite example](../examples/bipartite_couplings.py).
+For an employee/project comment DataFrame, run
+`python -m examples.bipartite_comments_pandas` (requires `python -m pip install pandas`).
+The [pandas example](../examples/bipartite_comments_pandas.py) prints the input
+table, employee adjacency, Laplacian and original activity totals.
 The existing strict pandas adapter accepts `representation="bipartite"` with
 explicit row and column contexts; `to_dataframe()` exports the reduced matrix.
 For NetworkX use `to_networkx(result.to_laplacian())`.
