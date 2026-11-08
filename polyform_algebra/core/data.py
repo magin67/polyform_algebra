@@ -39,6 +39,10 @@ class DomainError(PMGError):
     code = 'DOMAIN_ERROR'
 
 
+class NonuniqueProblem(PMGError):
+    code = 'NONUNIQUE_PROBLEM'
+
+
 class Infinity(Enum):
     """Exact resistance between disconnected vertices, not a floating number."""
     POSITIVE = '+infinity'
@@ -202,9 +206,9 @@ class MatrixData:
         _context(self.columns)
         if self.rows.arithmetic != self.columns.arithmetic:
             raise ArithmeticMismatch('matrix axes must use the same arithmetic')
-        if self.representation not in ('laplacian', 'greenian', 'resistance', 'gram'):
+        if self.representation not in ('laplacian', 'greenian', 'resistance', 'gram', 'operator'):
             raise InvalidInput('unknown matrix representation')
-        if self.representation != 'gram':
+        if self.representation not in ('gram', 'operator'):
             _compatible(self.rows, self.columns)
         values = tuple(_ordered(row) for row in _ordered(self.values))
         if len(values) != len(self.rows.labels) or any(len(row) != len(self.columns.labels) for row in values):
