@@ -43,6 +43,14 @@ class NonuniqueProblem(PMGError):
     code = 'NONUNIQUE_PROBLEM'
 
 
+class UnsupportedOperation(PMGError):
+    code = 'UNSUPPORTED_OPERATION'
+
+
+class ResourceLimit(PMGError):
+    code = 'RESOURCE_LIMIT'
+
+
 class Infinity(Enum):
     """Exact resistance between disconnected vertices, not a floating number."""
     POSITIVE = '+infinity'
