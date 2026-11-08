@@ -1,0 +1,104 @@
+[
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/en/PythonExamples/Deleting%20an%20Edge%20and%20a%20Bridge%20in%20Python.md",
+    "blob": "b17d8a4f69bfa717d94a90d192b2947a2acdba73",
+    "path": "pmg-library/en/PythonExamples/Deleting an Edge and a Bridge in Python.md",
+    "blocks": [
+      "import networkx as nx\nfrom polyform_algebra import Polyform, quForm\n\n# Delete edge 12 of the unit cycle C4.\ngraph = nx.cycle_graph(range(1, 5))\nlaplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\nmetric = laplacian.exp()\np = quForm([(points[1], points[2])])\nupdated = metric * (Polyform.one() - p)\nprint(\"cycle tau =\", updated.potential(quForm.one()))\nprint(\"cycle R12 =\", updated.norm(p))\n\n# Delete the bridge of conductance 2, retaining isolated vertex 3.\ngraph = nx.Graph()\ngraph.add_weighted_edges_from([(1, 2, 1), (2, 3, 2)])\nlaplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\nmetric = laplacian.exp()\np = quForm([(points[2], points[3])])\nupdated = metric * (Polyform.one() - 2*p)\nprint(\"bridge tau =\", updated.potential(quForm.one()))\nprint(\"remaining exponential =\", updated)\nf13 = quForm([(points[1], points[3])])\nprint(\"unnormalized potential =\", updated.potential(f13))\ntry:\n    updated.norm(f13)\nexcept ValueError as error:\n    # Expected: normalization on the full disconnected graph is undefined.\n    print(error)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/en/PythonExamples/Installing%20the%20Library%20and%20Running%20Examples.md",
+    "blob": "afdebbfc2d206925716e9ad64d5d920b0efec71f",
+    "path": "pmg-library/en/PythonExamples/Installing the Library and Running Examples.md",
+    "blocks": [
+      "from math import isclose\nfrom polyform_algebra import Point, quForm\n\n# Construct a unit triangle and its metric polyform.\na, b, c = Point.create_list([\"1\", \"2\", \"3\"])\nf12 = quForm([(a, b)])\nf13 = quForm([(a, c)])\nf23 = quForm([(b, c)])\nlaplacian = f12 + f13 + f23\nmetric = laplacian.exp()\n\n# Check the spanning-tree coefficient and effective resistance.\ntau = metric.potential(quForm.one())\nr12 = metric.norm(f12)\nprint(\"tau =\", tau)\nprint(\"R12 =\", r12)\nassert isclose(tau, 3.0)\nassert isclose(r12, 2/3)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/en/PythonExamples/Path%20P5%20and%20Cycle%20C4%20Exponentials%20in%20Python.md",
+    "blob": "5e337c1be8a3c113c1457da894a842904e2dd8e4",
+    "path": "pmg-library/en/PythonExamples/Path P5 and Cycle C4 Exponentials in Python.md",
+    "blocks": [
+      "import networkx as nx\nfrom polyform_algebra import Polyform, quForm\n\nfor name, graph in [(\"P5\", nx.path_graph(range(1, 6))),\n                    (\"C4\", nx.cycle_graph(range(1, 5)))]:\n    laplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\n    metric = laplacian.exp()\n    print(name)\n    for k in range(5):\n        part = metric.extract_grade(k)\n        # Valid for this retained forest representation, not an arbitrary rewrite.\n        print(k, part, \"forest weight sum =\", sum(part.terms.values()))\n    print(\"tau =\", metric.potential(quForm.one()))\n    pair = (1, 5) if name == \"P5\" else (1, 2)\n    form = quForm([(points[pair[0]], points[pair[1]])])\n    print(\"potential =\", metric.potential(form))\n    print(\"resistance =\", metric.norm(form))\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/en/PythonExamples/Triangle%20Coupling%20Variations%20in%20Python.md",
+    "blob": "acb32ca72d57e6bbbff0762278c87f673fb0db65",
+    "path": "pmg-library/en/PythonExamples/Triangle Coupling Variations in Python.md",
+    "blocks": [
+      "from polyform_algebra import Point, Polyform, quForm\n\na, b, c = Point.create_list([\"1\", \"2\", \"3\"])\nf12 = quForm([(a, b)])\nf13 = quForm([(a, c)])\nf23 = quForm([(b, c)])\nlaplacian = f12 + f13 + f23\nmetric = laplacian.exp()\n\ntau = metric.potential(quForm.one())\nr12 = metric.norm(f12)\ncoupling = metric.norm((b-a) @ (c-a))\n",
+      "delta = 1\nafter_one = metric * (Polyform.one() + delta*f12)\nassert after_one.is_equivalent((laplacian + delta*f12).exp())\n\ntau_one = after_one.potential(quForm.one())\nr12_one = after_one.norm(f12)\nr13_one = after_one.norm(f13)\nprobability12 = (1 + delta)*r12_one\nforest13 = after_one.potential(f13)\n",
+      "after_two = metric * (Polyform.one() + f12) * (Polyform.one() + f13)\nassert after_two.is_equivalent((laplacian + f12 + f13).exp())\nassert after_two.is_equivalent(\n    metric * (Polyform.one() + f13) * (Polyform.one() + f12)\n)\n\ntau_two = after_two.potential(quForm.one())\nr23_two = after_two.norm(f23)\nmixed_coefficient = metric.potential(f12*f13)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/en/PythonExamples/Unit%20Triangle%20Geometry%20in%20Python.md",
+    "blob": "99f790d3ed552a7b8f23704cb472ccece494a19f",
+    "path": "pmg-library/en/PythonExamples/Unit Triangle Geometry in Python.md",
+    "blocks": [
+      "from math import sqrt\nimport numpy as np\nfrom polyform_algebra import Point, quForm\n\na, b, c = Point.create_list([\"1\", \"2\", \"3\"])\nf12 = quForm([(a, b)])\nf13 = quForm([(a, c)])\nf23 = quForm([(b, c)])\nmetric = (f12 + f13 + f23).exp()\nu, v, w = b-a, c-a, c-b\n\n# @ creates a scalar polyform; norm evaluates it in the graph metric.\nuv = metric.norm(u @ v)\ngram = np.array([\n    [metric.norm(u @ u), uv],\n    [metric.norm(v @ u), metric.norm(v @ v)],\n])\n# Use the quadratic boundary form directly; no higher-grade @ is required.\nboundary_norm = metric.norm(quForm([(a, b, c)]))\narea_squared = boundary_norm / 4\narea = sqrt(area_squared)\nprint(\"u dot v =\", uv)\nprint(\"u dot w =\", metric.norm(u @ w))\nprint(\"Gram matrix =\", gram)\nprint(\"Gram determinant =\", np.linalg.det(gram))\nprint(\"boundary norm =\", boundary_norm)\nprint(\"area squared =\", area_squared)\nprint(\"area =\", area)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/en/PythonExamples/Weighted%20Chain%20in%20Python.md",
+    "blob": "18cfc95b4ecb384a8948c30dfa6c78e358ddbd70",
+    "path": "pmg-library/en/PythonExamples/Weighted Chain in Python.md",
+    "blocks": [
+      "import networkx as nx\nfrom polyform_algebra import Polyform, quForm\n\n# Edge weights are conductances.\ngraph = nx.Graph()\ngraph.add_weighted_edges_from([(1, 2, 1), (2, 3, 2)])\nlaplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\nmetric = laplacian.exp()\n\nprint(\"tau =\", metric.potential(quForm.one()))\nfor i, j in [(1, 2), (2, 3), (1, 3)]:\n    form = quForm([(points[i], points[j])])\n    print(f\"R{i}{j} =\", metric.norm(form))\n",
+      "import numpy as np\n\nmatrix, index = laplacian.to_matrix()\n# Reorder rows and columns explicitly as vertices 1, 2, 3.\norder = [index[points[label]] for label in (1, 2, 3)]\nmatrix = matrix[np.ix_(order, order)]\n# Ground vertex 3 and inject 2 A at vertex 1.\ncurrent = np.array([2.0, 0.0, -2.0])\npotential = np.append(np.linalg.solve(matrix[:2, :2], current[:2]), 0.0)\nprint(\"potentials =\", potential)\nprint(\"power =\", potential @ matrix @ potential)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/ru/PythonExamples/%D0%92%D0%B0%D1%80%D0%B8%D0%B0%D1%86%D0%B8%D0%B8%20%D1%81%D0%B2%D1%8F%D0%B7%D0%B5%D0%B9%20%D1%82%D1%80%D0%B5%D1%83%D0%B3%D0%BE%D0%BB%D1%8C%D0%BD%D0%B8%D0%BA%D0%B0%20%D0%BD%D0%B0%20Python.md",
+    "blob": "9c8414fe60daab90ac0c395e5f67db2fb4956f56",
+    "path": "pmg-library/ru/PythonExamples/Вариации связей треугольника на Python.md",
+    "blocks": [
+      "from polyform_algebra import Point, Polyform, quForm\n\na, b, c = Point.create_list([\"1\", \"2\", \"3\"])\nf12 = quForm([(a, b)])\nf13 = quForm([(a, c)])\nf23 = quForm([(b, c)])\nlaplacian = f12 + f13 + f23\nmetric = laplacian.exp()\n\ntau = metric.potential(quForm.one())\nr12 = metric.norm(f12)\ncoupling = metric.norm((b-a) @ (c-a))\n",
+      "delta = 1\nafter_one = metric * (Polyform.one() + delta*f12)\nassert after_one.is_equivalent((laplacian + delta*f12).exp())\n\ntau_one = after_one.potential(quForm.one())\nr12_one = after_one.norm(f12)\nr13_one = after_one.norm(f13)\nprobability12 = (1 + delta)*r12_one\nforest13 = after_one.potential(f13)\n",
+      "after_two = metric * (Polyform.one() + f12) * (Polyform.one() + f13)\nassert after_two.is_equivalent((laplacian + f12 + f13).exp())\nassert after_two.is_equivalent(\n    metric * (Polyform.one() + f13) * (Polyform.one() + f12)\n)\n\ntau_two = after_two.potential(quForm.one())\nr23_two = after_two.norm(f23)\nmixed_coefficient = metric.potential(f12*f13)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/ru/PythonExamples/%D0%92%D0%B7%D0%B2%D0%B5%D1%88%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F%20%D1%86%D0%B5%D0%BF%D0%BE%D1%87%D0%BA%D0%B0%20%D0%BD%D0%B0%20Python.md",
+    "blob": "1eb37ea288e2c1902d5a4d6474a49001f4f8c12d",
+    "path": "pmg-library/ru/PythonExamples/Взвешенная цепочка на Python.md",
+    "blocks": [
+      "import networkx as nx\nfrom polyform_algebra import Polyform, quForm\n\n# Edge weights are conductances.\ngraph = nx.Graph()\ngraph.add_weighted_edges_from([(1, 2, 1), (2, 3, 2)])\nlaplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\nmetric = laplacian.exp()\n\nprint(\"tau =\", metric.potential(quForm.one()))\nfor i, j in [(1, 2), (2, 3), (1, 3)]:\n    form = quForm([(points[i], points[j])])\n    print(f\"R{i}{j} =\", metric.norm(form))\n",
+      "import numpy as np\n\nmatrix, index = laplacian.to_matrix()\n# Reorder rows and columns explicitly as vertices 1, 2, 3.\norder = [index[points[label]] for label in (1, 2, 3)]\nmatrix = matrix[np.ix_(order, order)]\n# Ground vertex 3 and inject 2 A at vertex 1.\ncurrent = np.array([2.0, 0.0, -2.0])\npotential = np.append(np.linalg.solve(matrix[:2, :2], current[:2]), 0.0)\nprint(\"potentials =\", potential)\nprint(\"power =\", potential @ matrix @ potential)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/ru/PythonExamples/%D0%93%D0%B5%D0%BE%D0%BC%D0%B5%D1%82%D1%80%D0%B8%D1%8F%20%D0%B5%D0%B4%D0%B8%D0%BD%D0%B8%D1%87%D0%BD%D0%BE%D0%B3%D0%BE%20%D1%82%D1%80%D0%B5%D1%83%D0%B3%D0%BE%D0%BB%D1%8C%D0%BD%D0%B8%D0%BA%D0%B0%20%D0%BD%D0%B0%20Python.md",
+    "blob": "b5d76efbc0f93f840ff9bbd69d188668f5c42da0",
+    "path": "pmg-library/ru/PythonExamples/Геометрия единичного треугольника на Python.md",
+    "blocks": [
+      "from math import sqrt\nimport numpy as np\nfrom polyform_algebra import Point, quForm\n\na, b, c = Point.create_list([\"1\", \"2\", \"3\"])\nf12 = quForm([(a, b)])\nf13 = quForm([(a, c)])\nf23 = quForm([(b, c)])\nmetric = (f12 + f13 + f23).exp()\nu, v, w = b-a, c-a, c-b\n\n# @ creates a scalar polyform; norm evaluates it in the graph metric.\nuv = metric.norm(u @ v)\ngram = np.array([\n    [metric.norm(u @ u), uv],\n    [metric.norm(v @ u), metric.norm(v @ v)],\n])\n# Use the quadratic boundary form directly; no higher-grade @ is required.\nboundary_norm = metric.norm(quForm([(a, b, c)]))\narea_squared = boundary_norm / 4\narea = sqrt(area_squared)\nprint(\"u dot v =\", uv)\nprint(\"u dot w =\", metric.norm(u @ w))\nprint(\"Gram matrix =\", gram)\nprint(\"Gram determinant =\", np.linalg.det(gram))\nprint(\"boundary norm =\", boundary_norm)\nprint(\"area squared =\", area_squared)\nprint(\"area =\", area)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/ru/PythonExamples/%D0%A3%D0%B4%D0%B0%D0%BB%D0%B5%D0%BD%D0%B8%D0%B5%20%D1%80%D0%B5%D0%B1%D1%80%D0%B0%20%D0%B8%20%D0%BC%D0%BE%D1%81%D1%82%D0%B0%20%D0%BD%D0%B0%20Python.md",
+    "blob": "69ca65cafb852ea48270ff213e94bee60541af7b",
+    "path": "pmg-library/ru/PythonExamples/Удаление ребра и моста на Python.md",
+    "blocks": [
+      "import networkx as nx\nfrom polyform_algebra import Polyform, quForm\n\n# Delete edge 12 of the unit cycle C4.\ngraph = nx.cycle_graph(range(1, 5))\nlaplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\nmetric = laplacian.exp()\np = quForm([(points[1], points[2])])\nupdated = metric * (Polyform.one() - p)\nprint(\"cycle tau =\", updated.potential(quForm.one()))\nprint(\"cycle R12 =\", updated.norm(p))\n\n# Delete the bridge of conductance 2, retaining isolated vertex 3.\ngraph = nx.Graph()\ngraph.add_weighted_edges_from([(1, 2, 1), (2, 3, 2)])\nlaplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\nmetric = laplacian.exp()\np = quForm([(points[2], points[3])])\nupdated = metric * (Polyform.one() - 2*p)\nprint(\"bridge tau =\", updated.potential(quForm.one()))\nprint(\"remaining exponential =\", updated)\nf13 = quForm([(points[1], points[3])])\nprint(\"unnormalized potential =\", updated.potential(f13))\ntry:\n    updated.norm(f13)\nexcept ValueError as error:\n    # Expected: normalization on the full disconnected graph is undefined.\n    print(error)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/ru/PythonExamples/%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%BA%D0%B0%20%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B8%20%D0%B8%20%D0%B7%D0%B0%D0%BF%D1%83%D1%81%D0%BA%20%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80%D0%BE%D0%B2.md",
+    "blob": "9d27d27272b42cbd58ac714a715053d76ac2a4de",
+    "path": "pmg-library/ru/PythonExamples/Установка библиотеки и запуск примеров.md",
+    "blocks": [
+      "from math import isclose\nfrom polyform_algebra import Point, quForm\n\n# Construct a unit triangle and its metric polyform.\na, b, c = Point.create_list([\"1\", \"2\", \"3\"])\nf12 = quForm([(a, b)])\nf13 = quForm([(a, c)])\nf23 = quForm([(b, c)])\nlaplacian = f12 + f13 + f23\nmetric = laplacian.exp()\n\n# Check the spanning-tree coefficient and effective resistance.\ntau = metric.potential(quForm.one())\nr12 = metric.norm(f12)\nprint(\"tau =\", tau)\nprint(\"R12 =\", r12)\nassert isclose(tau, 3.0)\nassert isclose(r12, 2/3)\n"
+    ]
+  },
+  {
+    "source": "https://github.com/magin67/pmg-notes/blob/c909ddf8a590c69ed0a82fe48ca496e88fb707e0/pmg-library/ru/PythonExamples/%D0%AD%D0%BA%D1%81%D0%BF%D0%BE%D0%BD%D0%B5%D0%BD%D1%82%D1%8B%20%D0%BF%D1%83%D1%82%D0%B8%20P5%20%D0%B8%20%D1%86%D0%B8%D0%BA%D0%BB%D0%B0%20C4%20%D0%BD%D0%B0%20Python.md",
+    "blob": "d09cc28c32bd411c4289c1877023ea1889acfeb8",
+    "path": "pmg-library/ru/PythonExamples/Экспоненты пути P5 и цикла C4 на Python.md",
+    "blocks": [
+      "import networkx as nx\nfrom polyform_algebra import Polyform, quForm\n\nfor name, graph in [(\"P5\", nx.path_graph(range(1, 6))),\n                    (\"C4\", nx.cycle_graph(range(1, 5)))]:\n    laplacian, points = Polyform.from_networkx(graph, return_points=\"dict\")\n    metric = laplacian.exp()\n    print(name)\n    for k in range(5):\n        part = metric.extract_grade(k)\n        # Valid for this retained forest representation, not an arbitrary rewrite.\n        print(k, part, \"forest weight sum =\", sum(part.terms.values()))\n    print(\"tau =\", metric.potential(quForm.one()))\n    pair = (1, 5) if name == \"P5\" else (1, 2)\n    form = quForm([(points[pair[0]], points[pair[1]])])\n    print(\"potential =\", metric.potential(form))\n    print(\"resistance =\", metric.norm(form))\n"
+    ]
+  }
+]

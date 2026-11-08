@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from math import isfinite
 from numbers import Rational, Real
 from uuid import uuid4
+from enum import Enum
 
 from .._core.scalars import exact
 
@@ -32,6 +33,26 @@ class ArithmeticMismatch(PMGError):
 
 class NumericalUnresolved(PMGError):
     code = 'NUMERICAL_UNRESOLVED'
+
+
+class DomainError(PMGError):
+    code = 'DOMAIN_ERROR'
+
+
+class Infinity(Enum):
+    """Exact resistance between disconnected vertices, not a floating number."""
+    POSITIVE = '+infinity'
+
+
+INFINITY = Infinity.POSITIVE
+
+
+def _matrix_number(value, arithmetic, representation):
+    if representation == 'resistance' and value is INFINITY:
+        return INFINITY if arithmetic == 'exact' else float('inf')
+    if representation == 'resistance' and arithmetic == 'numeric' and isinstance(value, Real) and value == float('inf'):
+        return float('inf')
+    return _number(value, arithmetic)
 
 
 def _ordered(values):
@@ -188,7 +209,7 @@ class MatrixData:
         values = tuple(_ordered(row) for row in _ordered(self.values))
         if len(values) != len(self.rows.labels) or any(len(row) != len(self.columns.labels) for row in values):
             raise InvalidInput('matrix dimensions must match axes')
-        object.__setattr__(self, 'values', tuple(tuple(_number(x, self.rows.arithmetic) for x in row) for row in values))
+        object.__setattr__(self, 'values', tuple(tuple(_matrix_number(x, self.rows.arithmetic, self.representation) for x in row) for row in values))
 
     def to_numpy(self):
         """Return an independent array; exact coefficients retain object dtype."""
@@ -279,6 +300,8 @@ class Diagnostics:
     policy: NumericPolicy = None
     contract_version: str = '1'
     checks: tuple = ()
+    numerical: tuple = ()
+    corrections: tuple = ()
 
     def __post_init__(self):
         if self.arithmetic not in ('exact', 'numeric'):
@@ -289,6 +312,8 @@ class Diagnostics:
         if not all(isinstance(x, str) for x in checks):
             raise InvalidInput('diagnostic checks must be strings')
         object.__setattr__(self, 'checks', checks)
+        object.__setattr__(self, 'numerical', _ordered(self.numerical))
+        object.__setattr__(self, 'corrections', tuple(tuple(x) for x in self.corrections))
 
     @property
     def status(self):
