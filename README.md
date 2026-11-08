@@ -57,7 +57,7 @@ python -m venv .venv
 ## Первые вычисления
 
 Версия установленной библиотеки: `polyform_algebra.get_version()` или
-`polyform_algebra.__version__` (текущая версия — 0.6.0). Оба значения берутся
+`polyform_algebra.__version__` (текущая версия — 0.6.1). Оба значения берутся
 из metadata пакета; единственный источник номера — `pyproject.toml`.
 После изменения версии повторите установку, в том числе editable.
 В неустановленной копии исходников запрос версии вызывает
@@ -160,3 +160,6 @@ python -m build
 Конфигурация использует стандартные разделы
 [setuptools](https://setuptools.pypa.io/en/stable/userguide/pyproject_config.html)
 и [pytest](https://docs.pytest.org/en/stable/reference/customize.html).
+
+Версия 0.6.1 добавляет [независимый эталонный корпус](docs/REFERENCE_CORPUS.md)
+и карту приёмки T01–T42 без изменения математического API.

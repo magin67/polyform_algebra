@@ -1,0 +1,551 @@
+{
+  "schema": 1,
+  "notes_revision": "4bea8e6e52c1299510dab05e5d96dbe6ea79d796",
+  "sources": [
+    {
+      "path": "pmg-library/en/Getting Started and Foundations/Foundations/Core specification.md",
+      "blob": "28690957bf8a4124feb9136c05a23ee6325a6e5e",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Getting%20Started%20and%20Foundations/Foundations/Core%20specification.md"
+    },
+    {
+      "path": "pmg-library/en/Getting Started and Foundations/Introduction/Metric of Higher-Grade Objects.md",
+      "blob": "3c167c70bf6350e7e34d9e6dd0c4f18d9f7da6aa",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Getting%20Started%20and%20Foundations/Introduction/Metric%20of%20Higher-Grade%20Objects.md"
+    },
+    {
+      "path": "pmg-library/en/Resistance Geometry and Duality/Greenian and polyform duality/The Exterior Exponential and Representations of the Greenian.md",
+      "blob": "63967285c045ba9749374300d44dc9e159c3bd43",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Resistance%20Geometry%20and%20Duality/Greenian%20and%20polyform%20duality/The%20Exterior%20Exponential%20and%20Representations%20of%20the%20Greenian.md"
+    },
+    {
+      "path": "pmg-library/en/Graph Transformations and Gluing/Boundary polynomials and graph gluing/The Spanning-Tree Layer and Boundary Resistance Geometry.md",
+      "blob": "75d42fe5a09438ed01faa715433eebef1772c2fc",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Graph%20Transformations%20and%20Gluing/Boundary%20polynomials%20and%20graph%20gluing/The%20Spanning-Tree%20Layer%20and%20Boundary%20Resistance%20Geometry.md"
+    },
+    {
+      "path": "pmg-library/en/Graph Transformations and Gluing/Laplacian, Greenian and Resistance Variations/One Changing Edge.md",
+      "blob": "df365c64854e37675431ef80a5697fe94317a1cc",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Graph%20Transformations%20and%20Gluing/Laplacian%2C%20Greenian%20and%20Resistance%20Variations/One%20Changing%20Edge.md"
+    },
+    {
+      "path": "pmg-library/en/Graph Transformations and Gluing/Spectra of Isomers/Two Isomers of Three Hexagons.md",
+      "blob": "6a95c5f872f64e7f81df1299d75d1042eb7f5bc8",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Graph%20Transformations%20and%20Gluing/Spectra%20of%20Isomers/Two%20Isomers%20of%20Three%20Hexagons.md"
+    },
+    {
+      "path": "pmg-library/en/Polyform Algebra and Combinatorics/Structural identities/Partition Forms and the Tetrahedron Identity.md",
+      "blob": "72072e2ffd6c2322ff19e0f733ebc035842c360b",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Polyform%20Algebra%20and%20Combinatorics/Structural%20identities/Partition%20Forms%20and%20the%20Tetrahedron%20Identity.md"
+    },
+    {
+      "path": "pmg-library/en/Polyform Algebra and Combinatorics/Symmetric polyforms/Symmetric Polyforms of the Complete Graph.md",
+      "blob": "049a0f78f0bc5dc2c587a73bcaeeda675544bfcd",
+      "url": "https://github.com/magin67/pmg-notes/blob/4bea8e6e52c1299510dab05e5d96dbe6ea79d796/pmg-library/en/Polyform%20Algebra%20and%20Combinatorics/Symmetric%20polyforms/Symmetric%20Polyforms%20of%20the%20Complete%20Graph.md"
+    }
+  ],
+  "pythonexamples": [
+    {
+      "path": "pmg-library/en/PythonExamples/Deleting an Edge and a Bridge in Python.md",
+      "blob": "b17d8a4f69bfa717d94a90d192b2947a2acdba73"
+    },
+    {
+      "path": "pmg-library/en/PythonExamples/Installing the Library and Running Examples.md",
+      "blob": "afdebbfc2d206925716e9ad64d5d920b0efec71f"
+    },
+    {
+      "path": "pmg-library/en/PythonExamples/Path P5 and Cycle C4 Exponentials in Python.md",
+      "blob": "5e337c1be8a3c113c1457da894a842904e2dd8e4"
+    },
+    {
+      "path": "pmg-library/en/PythonExamples/Triangle Coupling Variations in Python.md",
+      "blob": "acb32ca72d57e6bbbff0762278c87f673fb0db65"
+    },
+    {
+      "path": "pmg-library/en/PythonExamples/Unit Triangle Geometry in Python.md",
+      "blob": "99f790d3ed552a7b8f23704cb472ccece494a19f"
+    },
+    {
+      "path": "pmg-library/en/PythonExamples/Weighted Chain in Python.md",
+      "blob": "18cfc95b4ecb384a8948c30dfa6c78e358ddbd70"
+    },
+    {
+      "path": "pmg-library/ru/PythonExamples/Вариации связей треугольника на Python.md",
+      "blob": "9c8414fe60daab90ac0c395e5f67db2fb4956f56"
+    },
+    {
+      "path": "pmg-library/ru/PythonExamples/Взвешенная цепочка на Python.md",
+      "blob": "1eb37ea288e2c1902d5a4d6474a49001f4f8c12d"
+    },
+    {
+      "path": "pmg-library/ru/PythonExamples/Геометрия единичного треугольника на Python.md",
+      "blob": "b5d76efbc0f93f840ff9bbd69d188668f5c42da0"
+    },
+    {
+      "path": "pmg-library/ru/PythonExamples/Удаление ребра и моста на Python.md",
+      "blob": "69ca65cafb852ea48270ff213e94bee60541af7b"
+    },
+    {
+      "path": "pmg-library/ru/PythonExamples/Установка библиотеки и запуск примеров.md",
+      "blob": "9d27d27272b42cbd58ac714a715053d76ac2a4de"
+    },
+    {
+      "path": "pmg-library/ru/PythonExamples/Экспоненты пути P5 и цикла C4 на Python.md",
+      "blob": "d09cc28c32bd411c4289c1877023ea1889acfeb8"
+    }
+  ],
+  "cases": [
+    {
+      "id": "weighted_triangle",
+      "n": 3,
+      "edges": [
+        [
+          0,
+          1,
+          "2"
+        ],
+        [
+          1,
+          2,
+          "3"
+        ],
+        [
+          0,
+          2,
+          "4"
+        ]
+      ],
+      "tau": "26",
+      "resistance": [
+        [
+          "0",
+          "7/26",
+          "5/26"
+        ],
+        [
+          "7/26",
+          "0",
+          "3/13"
+        ],
+        [
+          "5/26",
+          "3/13",
+          "0"
+        ]
+      ]
+    },
+    {
+      "id": "weighted_tetrahedron",
+      "n": 4,
+      "edges": [
+        [
+          0,
+          1,
+          "1"
+        ],
+        [
+          0,
+          2,
+          "2"
+        ],
+        [
+          0,
+          3,
+          "3"
+        ],
+        [
+          1,
+          2,
+          "4"
+        ],
+        [
+          1,
+          3,
+          "5"
+        ],
+        [
+          2,
+          3,
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "boundary_path",
+      "n": 5,
+      "edges": [
+        [
+          0,
+          1,
+          "1"
+        ],
+        [
+          1,
+          2,
+          "1"
+        ],
+        [
+          2,
+          3,
+          "1"
+        ],
+        [
+          3,
+          4,
+          "1"
+        ]
+      ],
+      "selected": [
+        0,
+        2,
+        4
+      ],
+      "tau": "1",
+      "delta": "4",
+      "gram": [
+        [
+          "2",
+          "2"
+        ],
+        [
+          "2",
+          "4"
+        ]
+      ],
+      "response": [
+        [
+          "1/2",
+          "-1/2",
+          "0"
+        ],
+        [
+          "-1/2",
+          "1",
+          "-1/2"
+        ],
+        [
+          "0",
+          "-1/2",
+          "1/2"
+        ]
+      ]
+    },
+    {
+      "id": "unit_k5",
+      "n": 5,
+      "edges": [
+        [
+          0,
+          1,
+          "1"
+        ],
+        [
+          0,
+          2,
+          "1"
+        ],
+        [
+          0,
+          3,
+          "1"
+        ],
+        [
+          0,
+          4,
+          "1"
+        ],
+        [
+          1,
+          2,
+          "1"
+        ],
+        [
+          1,
+          3,
+          "1"
+        ],
+        [
+          1,
+          4,
+          "1"
+        ],
+        [
+          2,
+          3,
+          "1"
+        ],
+        [
+          2,
+          4,
+          "1"
+        ],
+        [
+          3,
+          4,
+          "1"
+        ]
+      ],
+      "ordinary": [
+        "1",
+        "10",
+        "45",
+        "110",
+        "125"
+      ],
+      "tau": "125"
+    },
+    {
+      "id": "hexagons_A",
+      "n": 14,
+      "edges": [
+        [
+          0,
+          1,
+          "1"
+        ],
+        [
+          0,
+          5,
+          "1"
+        ],
+        [
+          0,
+          6,
+          "1"
+        ],
+        [
+          1,
+          2,
+          "1"
+        ],
+        [
+          1,
+          9,
+          "1"
+        ],
+        [
+          2,
+          3,
+          "1"
+        ],
+        [
+          3,
+          4,
+          "1"
+        ],
+        [
+          3,
+          10,
+          "1"
+        ],
+        [
+          4,
+          5,
+          "1"
+        ],
+        [
+          4,
+          13,
+          "1"
+        ],
+        [
+          6,
+          7,
+          "1"
+        ],
+        [
+          7,
+          8,
+          "1"
+        ],
+        [
+          8,
+          9,
+          "1"
+        ],
+        [
+          10,
+          11,
+          "1"
+        ],
+        [
+          11,
+          12,
+          "1"
+        ],
+        [
+          12,
+          13,
+          "1"
+        ]
+      ],
+      "ordinary": [
+        "1",
+        "16",
+        "120",
+        "560",
+        "1820",
+        "4368",
+        "8005",
+        "11410",
+        "12735",
+        "11080",
+        "7376",
+        "3604",
+        "1181",
+        "204"
+      ],
+      "rooted": [
+        "1",
+        "32",
+        "458",
+        "3872",
+        "21509",
+        "82624",
+        "224918",
+        "437304",
+        "603954",
+        "581144",
+        "375104",
+        "151536",
+        "33425",
+        "2856"
+      ],
+      "tau": "204",
+      "kirchhoff": "33425/204",
+      "traces": [
+        "32",
+        "108",
+        "416",
+        "1716"
+      ],
+      "radius": "43595/41616"
+    },
+    {
+      "id": "hexagons_B",
+      "n": 14,
+      "edges": [
+        [
+          0,
+          1,
+          "1"
+        ],
+        [
+          0,
+          5,
+          "1"
+        ],
+        [
+          0,
+          6,
+          "1"
+        ],
+        [
+          1,
+          2,
+          "1"
+        ],
+        [
+          1,
+          9,
+          "1"
+        ],
+        [
+          2,
+          3,
+          "1"
+        ],
+        [
+          2,
+          10,
+          "1"
+        ],
+        [
+          3,
+          4,
+          "1"
+        ],
+        [
+          3,
+          13,
+          "1"
+        ],
+        [
+          4,
+          5,
+          "1"
+        ],
+        [
+          6,
+          7,
+          "1"
+        ],
+        [
+          7,
+          8,
+          "1"
+        ],
+        [
+          8,
+          9,
+          "1"
+        ],
+        [
+          10,
+          11,
+          "1"
+        ],
+        [
+          11,
+          12,
+          "1"
+        ],
+        [
+          12,
+          13,
+          "1"
+        ]
+      ],
+      "ordinary": [
+        "1",
+        "16",
+        "120",
+        "560",
+        "1820",
+        "4368",
+        "8005",
+        "11410",
+        "12735",
+        "11080",
+        "7376",
+        "3604",
+        "1181",
+        "204"
+      ],
+      "rooted": [
+        "1",
+        "32",
+        "458",
+        "3872",
+        "21508",
+        "82604",
+        "224748",
+        "436504",
+        "601679",
+        "577144",
+        "370854",
+        "149036",
+        "32800",
+        "2856"
+      ],
+      "tau": "204",
+      "kirchhoff": "8200/51",
+      "traces": [
+        "32",
+        "108",
+        "416",
+        "1720"
+      ],
+      "radius": "43595/41616"
+    }
+  ]
+}
