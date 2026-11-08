@@ -109,19 +109,42 @@ def validate_laplacian(a, tol):
 
 
 def validate_greenian(a, tol):
-    """Validate a componentwise symmetric network Greenian and return components."""
-    if not np.isfinite(a).all() or not symmetric(a, tol) or vector_type(a, tol) != "vector":
-        raise ValueError("greenian must be finite, symmetric and vector type")
-    if np.any(np.linalg.eigvalsh(a) < -tol.threshold(scale(a))):
-        raise ValueError("greenian must be positive semidefinite")
-    lap = pinv(a, tol)
-    validate_laplacian(lap, tol)
-    groups = components(np.abs(lap) > tol.threshold(scale(lap)))
-    s = np.linalg.svd(a, compute_uv=False)
-    rank = np.count_nonzero(s > tol.threshold(scale(s)))
-    if rank != len(a) - len(groups):
-        raise ValueError("greenian rank is inconsistent with network components")
+    """Validate inverse networks without applying conductance units to Gr.
+
+    A connected centered Greenian has rank n-1, so its nonzero support
+    cannot split into smaller centered blocks. Preserve every nonzero link;
+    reject unresolved rank instead of inventing disconnected components.
+    Each block is normalized separately to allow different electrical scales.
+    """
+    if not np.isfinite(a).all():
+        raise ValueError("greenian must be finite")
+    groups = components((a != 0) | (a.T != 0))
+    for group in groups:
+        block = a[np.ix_(group, group)]
+        unit = scale(block)
+        relative = MatrixTolerance(0, max(tol.rtol, 100 * len(group) * np.finfo(float).eps))
+        normalized = block / unit if unit else block
+        if not symmetric(normalized, relative) or vector_type(normalized, relative) != "vector":
+            raise ValueError("greenian must be symmetric and vector type")
+        if np.any(np.linalg.eigvalsh(normalized) < -relative.threshold(scale(normalized))):
+            raise ValueError("greenian must be positive semidefinite")
+        s = np.linalg.svd(normalized, compute_uv=False)
+        if np.count_nonzero(s > relative.threshold(scale(s))) != len(group) - 1:
+            raise ValueError("greenian component is unresolved at this rank tolerance")
+        validate_laplacian(pinv(normalized, relative), relative)
     return groups
+
+
+def inverse_greenian_block(a, tol):
+    """Invert a validated Gr block in its own units, then restore conductance."""
+    unit = scale(a)
+    if not unit:
+        return np.zeros_like(a)
+    relative = MatrixTolerance(0, max(tol.rtol, 100 * len(a) * np.finfo(float).eps))
+    result = pinv(a / unit, relative) / unit
+    if not np.isfinite(result).all():
+        raise ValueError("inverse Greenian is outside the finite numerical range")
+    return result
 
 
 def validate_resistance(a, tol):

@@ -159,7 +159,7 @@ class MatrixOperations:
         else:
             self._require_network()
             green = self.to_greenian()
-            values = green._blockwise(lambda block: num.pinv(block, self.tolerance))
+            values = green._blockwise(lambda block: num.inverse_greenian_block(block, self.tolerance))
         return self._new(values, kind=MatrixKind.FORM_COEFFICIENTS, representation="laplacian")
 
     def to_adjacency(self):

@@ -17,7 +17,14 @@ class Simplex(Monoid):
 
     def __init__(self, elements, sign=1, dual=False, multiplicity=None):
         self.sign = sign
-        # Определяем, нужна ли полная нормализация
+        # Compact boundary merging assumes epsilon(vertex)=1. General
+        # weights must use the linear boundary operator on atomic blades.
+        for component in elements:
+            if isinstance(component, tuple) and any(
+                getattr(vertex, 'affine_weight', 1) != 1 for vertex in component
+            ):
+                raise ValueError("compact boundaries require affine weight one; use boundary() on an atomic simplex")
+        # Determine whether orientation and factor merging need normalization.
         need_normalize = False
         if len(elements) > 1:
             need_normalize = True
@@ -30,24 +37,24 @@ class Simplex(Monoid):
                 elif len(comp) == 1:
                     elem = comp[0]
                     if hasattr(elem, 'multiplicity') and elem.multiplicity == 0:
-                        elements = [elem]   # вектор выносим
+                        elements = [elem]   # Legacy vector representation.
                     else:
-                        elements = []       # точка -> единица
+                        elements = []       # Boundary of a unit-weight vertex.
                 else:  # len(comp) == 0
-                    # пустой кортеж эквивалентен единице
+                    # The empty tuple is the legacy unit representation.
                     elements = []
 
         if need_normalize:
             normalized = self._full_normalize(elements)
             if normalized is None:
-                # нулевой симплекс
+                # A repeated exterior factor annihilates the simplex.
                 super().__init__([], multiplicity=-1, dual=dual)
                 self.sign = 1
                 return
             components = normalized
         else:
             components = list(elements)
-        # Вычисление multiplicity
+        # Preserve the legacy multiplicity classification.
         if multiplicity is None:
             mult = 1
             for comp in components:
