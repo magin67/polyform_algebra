@@ -1,0 +1,46 @@
+name: PMG delivery
+on:
+  push:
+    paths-ignore: ['docs/**', 'README.md']
+  pull_request:
+    paths-ignore: ['docs/**', 'README.md']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  wheel:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.12', '3.13']
+        mode: [full, core]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build sdist and wheel
+        shell: python
+        run: |
+          import subprocess, sys
+          version = '${{ matrix.python }}'.replace('.', '')
+          subprocess.run([sys.executable, '-m', 'pip', 'install', '-c', f'constraints/py{version}.txt', 'build', 'setuptools'], check=True)
+          subprocess.run([sys.executable, '-m', 'build', '--no-isolation'], check=True)
+      - name: Test installed wheel outside checkout
+        shell: python
+        run: |
+          import glob, subprocess, sys
+          version = '${{ matrix.python }}'.replace('.', '')
+          command = [sys.executable, 'tools/check_distribution.py', '--wheel', glob.glob('dist/*.whl')[0], '--constraints', f'constraints/py{version}.txt', '--report', 'build/delivery.json']
+          if '${{ matrix.mode }}' == 'core':
+              command.append('--core-only')
+          subprocess.run(command, check=True)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: delivery-${{ matrix.os }}-${{ matrix.python }}-${{ matrix.mode }}
+          path: |
+            build/delivery.json
+            build/delivery.xml

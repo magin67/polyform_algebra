@@ -1,0 +1,8 @@
+# Reproducible delivery checks; NumPy 2 supplies Python 3.13 wheels.
+numpy==2.2.6
+sympy==1.14.0
+networkx==3.4.2
+pandas==2.2.3
+pytest==8.3.5
+build==1.2.2.post1
+setuptools==80.9.0

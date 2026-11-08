@@ -1,15 +1,16 @@
 # polyform_algebra/__init__.py
 # Re-export main classes for convenient access
 
-from .objects.element import Point, Vector, Element
-from .objects.simplex import Simplex
-from .objects.quform import quForm
-from .combinations.polysimplex import Polysimplex
-from .combinations.polyform import Polyform
-from ._core.basis import Basis
-from ._core.space import Space
-from ._core.monoid import Monoid
-from ._core.lincomb import LinearCombination
+from importlib import import_module
+
+# Keep historic imports while allowing the reference core to load on its own.
+_LEGACY = {
+    'Point': '.objects.element', 'Vector': '.objects.element', 'Element': '.objects.element',
+    'Simplex': '.objects.simplex', 'quForm': '.objects.quform',
+    'Polysimplex': '.combinations.polysimplex', 'Polyform': '.combinations.polyform',
+    'Basis': '._core.basis', 'Space': '._core.space', 'Monoid': '._core.monoid',
+    'LinearCombination': '._core.lincomb',
+}
 
 
 def get_version():
@@ -19,9 +20,13 @@ def get_version():
 
 
 def __getattr__(name):
-    """Expose version lazily so an uninstalled checkout can still import classes."""
+    """Resolve legacy classes and installed version without eager thematic imports."""
     if name == "__version__":
         return get_version()
+    if name in _LEGACY:
+        value = getattr(import_module(_LEGACY[name], __name__), name)
+        globals()[name] = value
+        return value
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
@@ -36,3 +41,7 @@ __all__ = [
     'Monoid',
     'LinearCombination',
 ]
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))

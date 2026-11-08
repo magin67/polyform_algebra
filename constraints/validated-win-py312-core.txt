@@ -1,0 +1,9 @@
+# Validated on Windows / CPython 3.12.1; PMG wheel version 0.7.0.
+colorama==0.4.6
+iniconfig==2.3.1
+mpmath==1.3.0
+numpy==1.26.4
+packaging==26.3
+pluggy==1.7.0
+pytest==8.3.5
+sympy==1.14.0

@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from numbers import Real
 import numpy as np
+from .._core.topology import connected_components
 
 
 @dataclass(frozen=True)
@@ -81,20 +82,9 @@ def distance(a):
 
 def components(adjacency):
     """Deterministic connected components of a Boolean undirected relation."""
-    remaining = set(range(len(adjacency)))
-    result = []
-    while remaining:
-        start = min(remaining)
-        remaining.remove(start)
-        found, pending = [start], [start]
-        while pending:
-            i = pending.pop()
-            for j in sorted(remaining.intersection(np.flatnonzero(adjacency[i]))):
-                remaining.remove(j)
-                found.append(j)
-                pending.append(j)
-        result.append(tuple(sorted(found)))
-    return tuple(result)
+    return connected_components(tuple(range(len(adjacency))),
+                                ((i, int(j)) for i, row in enumerate(adjacency)
+                                 for j in np.flatnonzero(row)))
 
 
 def validate_laplacian(a, tol):

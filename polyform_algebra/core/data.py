@@ -7,6 +7,7 @@ from uuid import uuid4
 from enum import Enum
 
 from .._core.scalars import exact
+from .._core.topology import connected_components
 
 
 class PMGError(ValueError):
@@ -263,25 +264,9 @@ class Network:
                 raise InvalidInput('Network data requires aggregated pairs; use network()')
             prepared[pair] = c
         edges = tuple((labels[i], labels[j], c) for (i, j), c in sorted(prepared.items()) if c != 0)
-        neighbors = {x: set() for x in labels}
-        for u, v, _ in edges:
-            neighbors[u].add(v)
-            neighbors[v].add(u)
-        unseen, groups = set(labels), []
-        for start in labels:
-            if start not in unseen:
-                continue
-            pending, found = [start], set()
-            unseen.remove(start)
-            while pending:
-                u = pending.pop()
-                found.add(u)
-                for v in neighbors[u] & unseen:
-                    unseen.remove(v)
-                    pending.append(v)
-            groups.append(tuple(x for x in labels if x in found))
+        groups = connected_components(labels, ((u, v) for u, v, _ in edges))
         object.__setattr__(self, 'edges', edges)
-        object.__setattr__(self, 'components', tuple(groups))
+        object.__setattr__(self, 'components', groups)
         if self.context.arithmetic == 'numeric' and self.policy is None:
             object.__setattr__(self, 'policy', NumericPolicy())
 
