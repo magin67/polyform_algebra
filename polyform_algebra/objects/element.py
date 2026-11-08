@@ -1,3 +1,4 @@
+from .._core.scalars import is_scalar, quotient
 
 from .simplex import Simplex
 from ..combinations.polysimplex import Polysimplex
@@ -98,18 +99,18 @@ class Element(Simplex):
         return Polysimplex({self: -1})
 
     def __mul__(self, other):
-        if isinstance(other, (int, float)):
+        if is_scalar(other):
             return Polysimplex({self: other})
         return super().__mul__(other)
 
     def __rmul__(self, other):
-        if isinstance(other, (int, float)):
+        if is_scalar(other):
             return self * other
         return NotImplemented
 
     def __truediv__(self, scalar):
-        if isinstance(scalar, (int, float)):
-            return self * (1.0 / scalar)
+        if is_scalar(scalar):
+            return self * quotient(1, scalar)
         return NotImplemented
 
     def in_basis(self, src_index, src_basis, target_basis):

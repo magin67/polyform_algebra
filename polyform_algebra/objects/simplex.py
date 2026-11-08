@@ -1,3 +1,4 @@
+from .._core.scalars import is_scalar, quotient
 # @title Симплекс – упорядоченный набор элементов. Каждый элемент списка уникален
 
 from .._core.monoid import Monoid
@@ -202,7 +203,7 @@ class Simplex(Monoid):
 
     def __mul__(self, other):
         from ..combinations.polysimplex import Polysimplex
-        if isinstance(other, (int, float)):
+        if is_scalar(other):
             return self.as_polysimplex() * other
         if isinstance(other, Simplex):
             if self.is_zero() or other.is_zero(): return Simplex.zero()

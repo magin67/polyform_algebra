@@ -139,12 +139,8 @@ class Polysimplex(LinearCombination):
         return terms, coeffs
 
     def as_coefficient_dict(self, basis_elements):
-        """
-        Возвращает словарь {элемент: коэффициент} для данного полисимплекса
-        относительно заданного списка базисных элементов.
-        Предполагается, что термы полисимплекса — симплексы из одного атомарного элемента.
-        """
-        coeffs = {elem: 0.0 for elem in basis_elements}
+        """Extract atomic coefficients without coercing rational values to floats."""
+        coeffs = {elem: 0 for elem in basis_elements}
         for term, coeff in self.terms.items():
             if len(term.components) == 1 and not isinstance(term.components[0], tuple):
                 elem = term.components[0]

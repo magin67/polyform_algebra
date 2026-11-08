@@ -1,3 +1,5 @@
+from .scalars import is_scalar, quotient, exact
+from numbers import Rational
 # @title Линейная комбинация
 
 from abc import ABC
@@ -7,7 +9,12 @@ from .monoid import Monoid
 
 class LinearCombination(ABC):
     @staticmethod
-    def _round_value(x, tol=1e-10): # Округляет число x с заданным допуском: обнуляет если |x|<tol, иначе округляет до целого, если близко
+    def _round_value(x, tol=1e-10):
+        """Preserve rationals exactly; apply legacy rounding only to approximate values."""
+        if isinstance(x, int):
+            return x
+        if isinstance(x, Rational):
+            return exact(x)
         if abs(x) < tol: return 0.0
         r = round(x)
         if abs(r - x) < tol: return float(r)
@@ -32,7 +39,7 @@ class LinearCombination(ABC):
         self._finalize()
 
     def _finalize(self, tolerance=1e-10):
-        """Round coefficients, remove zeros and refresh cached grades in one pass."""
+        """Preserve rational coefficients, round floats and remove zero terms."""
         for term, coeff in list(self.terms.items()):
             rounded = self._round_value(coeff, tolerance)
             if rounded == 0:
@@ -94,7 +101,7 @@ class LinearCombination(ABC):
 
     def __add__(self, other):
         # Если other — число, преобразуем его в комбинацию с единичным термом
-        if isinstance(other, (int, float)):
+        if is_scalar(other):
             other = self.__class__({self.term_type.one(): other})
         # Если other — одиночный терм, превращаем в комбинацию
         elif isinstance(other, self.term_type):
@@ -141,7 +148,7 @@ class LinearCombination(ABC):
         return self.__class__(result_terms)
 
     def __mul__(self, other):
-        if isinstance(other, (int, float)): return self.__rmul__(other)
+        if is_scalar(other): return self.__rmul__(other)
         if isinstance(other, LinearCombination):
             if self.is_zero() or other.is_zero(): return self.zero()
             if self.is_one(): return other
@@ -156,7 +163,7 @@ class LinearCombination(ABC):
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(other)}")
 
     def __rmul__(self, scalar):
-        if isinstance(scalar, (int, float)):
+        if is_scalar(scalar):
             new = self.__class__()
             new.terms = Counter({k: v * scalar for k, v in self.terms.items()})
             new.term_type = self.term_type   # добавлено
@@ -165,11 +172,11 @@ class LinearCombination(ABC):
         raise TypeError(f"Cannot multiply {self.__class__.__name__} by {type(scalar)}")
 
     def __truediv__(self, scalar):
-        if isinstance(scalar, (int, float)):
+        if is_scalar(scalar):
             if scalar == 0:
                 raise ZeroDivisionError("Division by zero")
-            # Используем умножение на обратное число
-            return self * (1 / scalar)
+            # Rational reciprocals must not pass through floating-point division.
+            return self * quotient(1, scalar)
         raise TypeError(f"Cannot divide {self.__class__.__name__} by {type(scalar)}")
 
     def _create_empty(self): # Создаёт пустой объект того же класса.
@@ -321,4 +328,4 @@ class LinearCombination(ABC):
             if term.is_zero():
                 break
             result = result + term
-        return exp(scalar) * result
+        return (1 if scalar == 0 else exp(scalar)) * result

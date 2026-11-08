@@ -1,3 +1,4 @@
+from .._core.scalars import is_scalar, quotient
 # @title Форма – это квадратичный симплекс
 
 from .simplex import Simplex
@@ -56,7 +57,7 @@ class quForm(Simplex):
 
     def __mul__(self, other):
         from ..combinations.polyform import Polyform
-        if isinstance(other, (int, float)):
+        if is_scalar(other):
             return self.as_polyform() * other
         if isinstance(other, quForm):
             if self.is_one() and other.is_one(): return quForm.one()

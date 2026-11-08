@@ -1,3 +1,4 @@
+from .._core.scalars import quotient, significant
 # @title Полиформа - линейная комбинация форм
 
 from collections import Counter
@@ -249,7 +250,7 @@ class Polyform(Polysimplex):
                         key = frozenset((left, right))
                         factor = 1 if i == j else 2
                         coefficients[key] += direction * weight * factor * a * b
-        return all(abs(value) <= tolerance for value in coefficients.values())
+        return all(not significant(value, tolerance) for value in coefficients.values())
 
     # --- Методы метрики ---
     def potential(self, obj_polyform):
@@ -275,12 +276,18 @@ class Polyform(Polysimplex):
             raise ValueError("Metric needs a fixed top form; multiple coefficients found")
         if metric_lead == 0:
             raise ValueError("Metric has zero spanning coefficient; normalization is undefined")
-        return self.potential(obj_polyform) / metric_lead
+        potential = self.potential(obj_polyform)
+        # Preserve the legacy float-valued metric for ordinary integer/float
+        # inputs. Explicit rational coefficients opt into rational evaluation.
+        from fractions import Fraction
+        if any(isinstance(c, Fraction) for c in self.terms.values()) or isinstance(potential, Fraction):
+            return quotient(potential, metric_lead)
+        return potential / metric_lead
 
     @staticmethod
     def polar_form(p, q, tolerance=1e-10):
-        # Это полярная форма элементов (векторов и/или точек) p, q, для которых известны фреймы (Polysimplex)
-        # Собираем базисные элементы
+        # Polarization is supported for grade-one exterior objects only.
+        # Collect basis elements after expanding compact boundaries.
         if isinstance(p, Simplex): p = p.as_polysimplex()
         if isinstance(q, Simplex): q = q.as_polysimplex()
 
@@ -289,7 +296,7 @@ class Polyform(Polysimplex):
                 raise TypeError("Expected an external object, not a form")
             if not obj.is_zero() and (not obj.is_homogeneous() or obj.grade() != 1):
                 raise ValueError("Polarization currently supports only homogeneous grade 1 objects")
-        # Раскрываем (ab) в b-a перед извлечением атомарных коэффициентов.
+        # Expand (ab) into b-a before extracting atomic coefficients.
         def expand(obj):
             result = Polysimplex.zero()
             for term, coeff in obj.terms.items():
@@ -305,15 +312,15 @@ class Polyform(Polysimplex):
         sum_p = sum(coeff_p.values())
         sum_q = sum(coeff_q.values())
         
-        # Диагональная часть
+        # Diagonal squares.
         diag_terms = {}
         for elem in basis_elements:
             c = sum_p * coeff_q[elem] + sum_q * coeff_p[elem]
-            if abs(c) > tolerance:
+            if significant(c, tolerance):
                 form = quForm([elem])
-                diag_terms[form] = diag_terms.get(form, 0.0) + c
+                diag_terms[form] = diag_terms.get(form, 0) + c
         
-        # Векторная часть
+        # Pair-boundary squares.
         diff_terms = {}
         n = len(basis_elements)
         for i in range(n):
@@ -321,23 +328,28 @@ class Polyform(Polysimplex):
                 b_i = basis_elements[i]
                 b_j = basis_elements[j]
                 c = coeff_p[b_i] * coeff_q[b_j] + coeff_q[b_i] * coeff_p[b_j]
-                if abs(c) > tolerance:
+                if significant(c, tolerance):
                     form = quForm([(b_i, b_j)])
-                    diff_terms[form] = diff_terms.get(form, 0.0) + c
+                    diff_terms[form] = diff_terms.get(form, 0) + c
         
-        # Полярная форма = диагональная - разностная
+        # The polar form is the diagonal contribution minus pair differences.
         terms = diag_terms.copy()
         for form, c in diff_terms.items():
-            terms[form] = terms.get(form, 0.0) - c
+            terms[form] = terms.get(form, 0) - c
         
-        # Округление
-        cleaned = {form: Polyform._round_value(c, tolerance) for form, c in terms.items() if abs(c) > tolerance}
+        # Prune only approximate coefficients; exact nonzero terms remain.
+        cleaned = {form: Polyform._round_value(c, tolerance) for form, c in terms.items() if significant(c, tolerance)}
         return Polyform(cleaned)
 
     @staticmethod
     def scalar_product(p, q, tolerance=1e-10):
-        # p, q - фреймы (Polysimplex)
-        return Polyform.polar_form(p, q, tolerance) * 0.5
+        # Keep the historical numeric adapter for integer/float callers;
+        # explicit rational coefficients opt into exact polarization.
+        from fractions import Fraction
+        rational = any(isinstance(c, Fraction) for obj in (p, q)
+                       for c in getattr(obj, 'terms', {}).values())
+        polar = Polyform.polar_form(p, q, tolerance)
+        return polar / 2 if rational else polar * 0.5
 
     def to_matrix(self):
         """
@@ -467,4 +479,4 @@ class Polyform(Polysimplex):
             if not (term * term).is_zero():
                 raise ValueError("Factorized exponential requires square-zero terms")
             result = result * (Polyform.one() + Polyform({term: coeff}))
-        return exp(scalar) * result
+        return (1 if scalar == 0 else exp(scalar)) * result
