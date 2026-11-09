@@ -1,0 +1,50 @@
+{
+  "schema_version": "1",
+  "kind": "comment_results",
+  "run_id": "activity-demo-1",
+  "source_system": "demo-1c",
+  "snapshot_id": "comments-2026-10",
+  "snapshot_digest": "f30c1ef505e5a46e3652c410c8516eb193ea5b49be09b15b313a234da9b1d125",
+  "model": {
+    "id": "comment_count",
+    "version": "1",
+    "parameters": {}
+  },
+  "library_version": "0.9.0",
+  "created_at": "2026-11-01T00:00:00+04:00",
+  "status": "completed",
+  "metrics": [
+    {
+      "employee_id": "001",
+      "metric": "comment_count",
+      "status": "exact",
+      "value": {
+        "type": "rational",
+        "numerator": "2",
+        "denominator": "1"
+      }
+    },
+    {
+      "employee_id": "002",
+      "metric": "comment_count",
+      "status": "exact",
+      "value": {
+        "type": "rational",
+        "numerator": "1",
+        "denominator": "1"
+      }
+    },
+    {
+      "employee_id": "003",
+      "metric": "comment_count",
+      "status": "exact",
+      "value": {
+        "type": "rational",
+        "numerator": "0",
+        "denominator": "1"
+      }
+    }
+  ],
+  "edges": [],
+  "messages": []
+}

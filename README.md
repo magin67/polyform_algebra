@@ -59,7 +59,7 @@ python -m venv .venv
 ## Первые вычисления
 
 Версия установленной библиотеки: `polyform_algebra.get_version()` или
-`polyform_algebra.__version__` (текущая версия — 0.8.0). Оба значения берутся
+`polyform_algebra.__version__` (текущая версия — 0.9.0). Оба значения берутся
 из metadata пакета; единственный источник номера — `pyproject.toml`.
 После изменения версии повторите установку, в том числе editable.
 В неустановленной копии исходников запрос версии вызывает
@@ -171,3 +171,6 @@ python -m build
 
 Версия 0.8.0: [адаптеры и коннекторы](docs/ADAPTERS_AND_CONNECTORS.md).
 Реализации обмена pandas/NetworkX вынесены из matrix; прежние импорты совместимы.
+
+Версия 0.9.0: [контракт данных и файловый обмен с 1С](docs/COMMENT_FILE_EXCHANGE.md).
+Пример: `python -m examples.comment_file_exchange`.

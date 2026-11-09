@@ -203,3 +203,11 @@ OData можно использовать, если нужные данные у
 - [PMG: балансировка направленного графа](https://github.com/magin67/pmg-notes/blob/96fb9b4764f943fb7a5e74b847d188bde8191b78/pmg-library/en/Directed%20Graphs%20and%20Extensions/Balanced%20graphs/Balancing%20a%20Directed%20Graph%20by%20Spanning-Tree%20Potentials.md).
 - [HTTP-сервисы 1С](https://v8.1c.ru/platforma/http-servisy/), [стандартный REST-интерфейс](https://v8.1c.ru/platforma/rest-interfeys/).
 - [Границы ядра и расширений](DELIVERY_AND_EXTENSIONS.md), [план агента](PMG_AGENT_IMPLEMENTATION_PLAN.md).
+
+## Реализовано в 0.9.0
+
+[Контракт полного JSON-снимка и файлового результата](COMMENT_FILE_EXCHANGE.md)
+и конкретные CommentSnapshotFileSource/CommentResultFileSink готовы. Синтетический
+пример проходит полный круг обмена. Реальная выгрузка вашей конфигурации 1С,
+обработчик её обратного импорта и графовый прикладной сценарий остаются следующими
+шагами. Поэтому весь этап 1 на реальных данных ещё не считается принятым.

@@ -1,0 +1,59 @@
+{
+  "schema_version": "1",
+  "kind": "comment_snapshot",
+  "source_system": "demo-1c",
+  "snapshot_id": "comments-2026-10",
+  "period": {
+    "start": "2026-10-01T00:00:00+04:00",
+    "end": "2026-11-01T00:00:00+04:00"
+  },
+  "exported_at": "2026-11-01T00:00:00+04:00",
+  "complete": true,
+  "employees": [
+    {
+      "id": "001",
+      "label": "Анна"
+    },
+    {
+      "id": "002",
+      "label": "Борис"
+    },
+    {
+      "id": "003",
+      "label": "Без комментариев"
+    }
+  ],
+  "documents": [
+    {
+      "id": "001",
+      "label": "Документ X"
+    },
+    {
+      "id": "002",
+      "label": "Документ Y"
+    }
+  ],
+  "comments": [
+    {
+      "id": "1",
+      "employee_id": "001",
+      "document_id": "001",
+      "occurred_at": "2026-10-15T12:00:00+04:00"
+    },
+    {
+      "id": "2",
+      "employee_id": "002",
+      "document_id": "001",
+      "occurred_at": "2026-10-15T12:00:00+04:00"
+    },
+    {
+      "id": "3",
+      "employee_id": "001",
+      "document_id": "002",
+      "occurred_at": "2026-10-15T12:00:00+04:00"
+    }
+  ],
+  "filters": {
+    "department": "demo"
+  }
+}
