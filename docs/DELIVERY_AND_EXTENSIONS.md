@@ -96,3 +96,11 @@ SHA-256 строится по каноническому JSON закодиров
 математическое утверждение доказанным. Указатель на Core specification задаёт базовые
 определения; конкретные источники операций перечислены в контрактах ядра и корпусе.
 Пример запуска: `python -m examples.computation_record`.
+
+## Уточнение структуры в 0.8.0
+
+Реализации `matrix.pandas` и `matrix.networkx` перенесены в `adapters.pandas`
+и `adapters.matrix_networkx`. Старые пути сохранены как совместимые импорты.
+Строгий `adapters.networkx` версии 0.7.0 сохранён без изменений. Внешний обмен
+выделен в `connectors`, пока с абстрактными контрактами DataSource/ResultSink.
+[Новый контракт](ADAPTERS_AND_CONNECTORS.md), [прикладной план](PMG_APPLIED_INTEGRATION_PLAN.md).

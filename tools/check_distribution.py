@@ -50,7 +50,7 @@ def main():
             run('-c', "import importlib.util; assert all(importlib.util.find_spec(x) is None for x in ('networkx','pandas','scipy'))")
             targets = ['tests/test_core_data.py','tests/test_core_network_math.py',
                        'tests/test_core_reductions.py','tests/test_core_algebra.py',
-                       'tests/test_delivery.py','tests/reference']
+                       'tests/test_delivery.py','tests/test_connector_contracts.py','tests/reference']
         else:
             run('-m','pip','check')
             targets = ['tests']
