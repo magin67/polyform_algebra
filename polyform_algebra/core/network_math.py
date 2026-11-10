@@ -13,7 +13,7 @@ import sympy as sp
 
 from .data import (
     Context, Coordinates, MatrixData, Network, NumericPolicy, Calculation,
-    Diagnostics, InvalidInput, DomainError, NumericalUnresolved, INFINITY,
+    Diagnostics, InvalidInput, DomainError, NumericalUnresolved, UnsupportedOperation, INFINITY,
     _compatible, _label, _labels, _ordered, network,
     _context, _matrix_number,
 )
@@ -47,6 +47,14 @@ class PairValues:
             raise InvalidInput('pair/value size mismatch')
         object.__setattr__(self, 'pairs', pairs)
         object.__setattr__(self, 'values', tuple(_matrix_number(x,self.context.arithmetic,'resistance') for x in values))
+
+
+@dataclass(frozen=True)
+class CircumsphereResult:
+    """Squared radius and affine coordinates in the ordered vertex context."""
+
+    resistance_radius: Fraction
+    center_coordinates: Coordinates
 
 
 def _require(net):
@@ -186,6 +194,36 @@ def resistance(net, *, pairs=None):
     else:
         value = _matrix([[pair_value(a, b) for b in labels] for a in labels], net.context, 'resistance')
     return _result(net, 'resistance', value, calc.diagnostics.numerical)
+
+
+def circumsphere(net):
+    """Return the exact circumcenter and squared radius of a resistance simplex.
+
+    The network must be exact, nonempty and connected. The sphere is taken in
+    the affine hull of its vertices. Center coordinates may be negative.
+    """
+    _require(net)
+    if net.context.arithmetic != 'exact':
+        raise UnsupportedOperation('core circumsphere requires exact arithmetic')
+    if len(net.components) != 1:
+        raise DomainError('circumsphere requires a nonempty connected network')
+
+    resistances = resistance(net).value.values
+    labels = net.context.labels
+    index = {label: i for i, label in enumerate(labels)}
+    center = [Fraction(1) for _ in labels]
+    for a, b, conductance in net.edges:
+        i, j = index[a], index[b]
+        # Each edge contributes its spanning-tree inclusion probability to
+        # both expected degrees. The center is one minus half that degree.
+        half_probability = conductance * resistances[i][j] / 2
+        center[i] -= half_probability
+        center[j] -= half_probability
+
+    # Equal-radius equations give R @ center = 2 * radius * ones.
+    radius = sum(r * alpha for r, alpha in zip(resistances[0], center)) / 2
+    result = CircumsphereResult(radius, Coordinates(net.context, center))
+    return _result(net, 'circumsphere', result)
 
 
 def spanning_tree_weight(net, *, componentwise=False):

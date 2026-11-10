@@ -10,7 +10,8 @@ from .data import (
     UnsupportedOperation, ResourceLimit,
 )
 from .network_math import (
-    PairValues, SolveCheck, laplacian, green, resistance, spanning_tree_weight,
+    PairValues, SolveCheck, CircumsphereResult, laplacian, green, resistance,
+    circumsphere, spanning_tree_weight,
     network_from_laplacian, network_from_resistance, inner_product, gram,
     blade_inner_product, simplex_volume_squared,
 )
@@ -32,7 +33,7 @@ __all__ = [
     'ArithmeticMismatch', 'NumericalUnresolved', 'coordinates', 'network',
     'reorder', 'to_numeric',
     'DomainError', 'INFINITY', 'PairValues', 'SolveCheck', 'laplacian', 'green',
-    'resistance', 'spanning_tree_weight', 'network_from_laplacian',
+    'resistance', 'CircumsphereResult', 'circumsphere', 'spanning_tree_weight', 'network_from_laplacian',
     'network_from_resistance', 'inner_product', 'gram', 'blade_inner_product',
     'simplex_volume_squared',
     'NonuniqueProblem', 'DirichletResult', 'ReductionResult', 'ContractionResult',
