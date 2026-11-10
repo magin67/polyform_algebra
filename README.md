@@ -35,6 +35,13 @@ python -m venv .venv
 
 ## Контексты и точная арифметика
 
+`polyform_algebra.combinatorics` вычисляет целочисленные потенциалы
+`second_kind_potential(block_sizes)`, `first_kind_potential(cycle_lengths)`
+и `path_cycle_potential(cycle_lengths, path_lengths)`. Размеры блоков
+и длины компонент задаются положительными целыми числами. Для смешанного
+типа длины считаются в дугах, изолированные вершины опускаются, а петля
+имеет длину один. Пример `python -m examples.combinatorial_potentials`.
+
 `polyform_algebra.core.circumsphere(net)` вычисляет резистивный радиус
 и би-координаты центра описанной сферы связного графа в рациональных
 дробях. Пример: `python -m examples.exact_circumspheres`.
