@@ -18,6 +18,7 @@ from .reductions import (
     DirichletResult, ReductionResult, ContractionResult,
     dirichlet, extend, kron_reduce, contract, induced_subgraph,
 )
+from .isotropic import IsotropicExtension
 from .algebra import (
     AlgebraLimits, Exterior, SimpleTerm, Form, exterior, simple_term, form,
     Atom, Boundary, Unit, wedge, boundary, grade_part, square, form_product,
@@ -36,6 +37,7 @@ __all__ = [
     'simplex_volume_squared',
     'NonuniqueProblem', 'DirichletResult', 'ReductionResult', 'ContractionResult',
     'dirichlet', 'extend', 'kron_reduce', 'contract', 'induced_subgraph',
+    'IsotropicExtension',
     'UnsupportedOperation', 'ResourceLimit', 'AlgebraLimits', 'Exterior',
     'SimpleTerm', 'Form', 'exterior', 'simple_term', 'form', 'Atom', 'Boundary',
     'Unit', 'wedge', 'boundary', 'grade_part', 'square', 'form_product',
