@@ -3,8 +3,8 @@
 PMG v5 c909ddf8a590c69ed0a82fe48ca496e88fb707e0: Core Specification,
 sections Exterior objects, Forms, Spanning-tree coefficient and Metric identity.
 The public grammar contains only squares of products of atoms and boundaries.
-Ordered tensor coefficient pairs below are PRIVATE comparison/evaluation data,
-not a public constructor for general bilinear forms. See CORE_ALGEBRA_API.md.
+Ordered tensor coefficient pairs are available for inspection of supported
+forms. They do not extend the public constructor grammar. See CORE_ALGEBRA_API.md.
 """
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -15,7 +15,7 @@ import sympy as sp
 
 from .data import (
     Context, Calculation, Diagnostics, InvalidInput, DomainError,
-    UnsupportedOperation, ResourceLimit, _context, _compatible, _number, _ordered,
+    UnsupportedOperation, ResourceLimit, _context, _compatible, _labels, _number, _ordered,
 )
 from .network_math import _require, green
 
@@ -349,6 +349,32 @@ def square(term, *, limits=None):
     return _answer(Form(term.context, ((term, 1),), limits), 'square', limits)
 
 
+def partition_form(context, blocks, *, limits=None):
+    """Square the exterior product of the boundaries of disjoint vertex blocks.
+
+    Blocks are nonempty ordered sequences of labels. Any omitted vertex is an
+    implicit singleton, and all singleton boundaries are scalar units.
+    """
+    _exact_context(context)
+    limits = _limits(limits)
+    if any(weight != 1 for weight in context.epsilon):
+        raise UnsupportedOperation('partition forms require unit affine weights')
+    positions = {label: i for i, label in enumerate(context.labels)}
+    seen = set()
+    factors = []
+    for block in _ordered(blocks):
+        labels = _labels(block)
+        if not labels or any(label not in positions or label in seen for label in labels):
+            raise InvalidInput('partition blocks must be nonempty, disjoint and use context labels')
+        seen.update(labels)
+        if len(labels) > 1:
+            _check(len(factors) + 1, limits)
+            factors.append(('boundary', tuple(positions[label] for label in labels)))
+    term = SimpleTerm(context, tuple(factors), limits=limits)
+    result = Form(context, ((term, 1),), limits)
+    return _answer(result, 'partition_form', limits)
+
+
 def _forms(f, g=None):
     if not isinstance(f, Form) or (g is not None and not isinstance(g, Form)):
         raise InvalidInput('expected Form')
@@ -379,7 +405,7 @@ def form_product(f, g, *, limits=None):
 
 
 def _pairs(f, limits):
-    """Private full ordered tensor coefficients; off-diagonal entries occur twice."""
+    """Accumulate ordered tensor coefficients; off-diagonal entries occur twice."""
     _forms(f)
     _check(len(f.terms), limits)
     result = {}
@@ -390,6 +416,17 @@ def _pairs(f, limits):
             for b, y in expansion.items():
                 _accumulate(result, (a, b), c*x*y, limits)
     return result
+
+
+def form_coefficients(f, *, limits=None):
+    """Return sorted nonzero ((left_blade, right_blade), coefficient) pairs.
+
+    Each blade is an increasing tuple of indices in the form's context. The
+    scalar blade is empty. Off-diagonal entries are kept in both orders.
+    """
+    _forms(f)
+    limits = _limits(limits, f)
+    return _answer(tuple(sorted(_pairs(f, limits).items())), 'form_coefficients', limits)
 
 
 def equivalent(f, g, *, limits=None):

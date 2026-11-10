@@ -24,7 +24,7 @@ from .isotropic import IsotropicExtension
 from .algebra import (
     AlgebraLimits, Exterior, SimpleTerm, Form, exterior, simple_term, form,
     Atom, Boundary, Unit, wedge, boundary, grade_part, square, form_product,
-    equivalent, polar_form, form_exp, laplacian_form, spanning_coefficient,
+    partition_form, form_coefficients, equivalent, polar_form, form_exp, laplacian_form, spanning_coefficient,
     potential, evaluate_form,
 )
 
@@ -44,6 +44,6 @@ __all__ = [
     'UnsupportedOperation', 'ResourceLimit', 'AlgebraLimits', 'Exterior',
     'SimpleTerm', 'Form', 'exterior', 'simple_term', 'form', 'Atom', 'Boundary',
     'Unit', 'wedge', 'boundary', 'grade_part', 'square', 'form_product',
-    'equivalent', 'polar_form', 'form_exp', 'laplacian_form',
+    'partition_form', 'form_coefficients', 'equivalent', 'polar_form', 'form_exp', 'laplacian_form',
     'spanning_coefficient', 'potential', 'evaluate_form',
 ]
