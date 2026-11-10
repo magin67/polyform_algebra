@@ -39,6 +39,11 @@ python -m venv .venv
 и би-координаты центра описанной сферы связного графа в рациональных
 дробях. Пример: `python -m examples.exact_circumspheres`.
 
+`degree_potential(net)` и `laplacian_circumsphere(net)` из
+`polyform_algebra.core` вычисляют точный потенциал степеней, би-координаты
+центра и квадрат линейного радиуса в геометрии с грамианом `L`.
+Пример: `python -m examples.degree_geometry`.
+
 `polyform_algebra.core.IsotropicExtension` строит изотропное расширение
 резистивной метрики связного графа в точной рациональной арифметике.
 В его контексте доступны локальные вершины, выделенный нуль-вектор `z`,

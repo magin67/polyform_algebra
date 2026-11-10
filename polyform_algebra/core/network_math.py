@@ -57,6 +57,15 @@ class CircumsphereResult:
     center_coordinates: Coordinates
 
 
+@dataclass(frozen=True)
+class LaplacianCircumsphereResult:
+    """Circumsphere in the geometry with centered Gram matrix L."""
+
+    squared_radius: Fraction
+    center_coordinates: Coordinates
+    degree_potential: Coordinates
+
+
 def _require(net):
     if not isinstance(net, Network):
         raise InvalidInput('expected Network')
@@ -224,6 +233,46 @@ def circumsphere(net):
     radius = sum(r * alpha for r, alpha in zip(resistances[0], center)) / 2
     result = CircumsphereResult(radius, Coordinates(net.context, center))
     return _result(net, 'circumsphere', result)
+
+
+def _degree_poisson(net):
+    _require(net)
+    if net.context.arithmetic != 'exact':
+        raise UnsupportedOperation('degree geometry requires exact arithmetic')
+    if len(net.components) != 1:
+        raise DomainError('degree geometry requires a nonempty connected network')
+
+    L = laplacian(net).value.values
+    degrees = tuple(row[i] for i, row in enumerate(L))
+    mean = sum(degrees) / len(degrees)
+    source = tuple(degree - mean for degree in degrees)
+    # Green's matrix inverts L on the zero-sum subspace, fixing the gauge.
+    Gr = green(net).value.values
+    potential = Coordinates(net.context, tuple(
+        sum(value * current for value, current in zip(row, source)) for row in Gr
+    ))
+    return mean, source, potential
+
+
+def degree_potential(net):
+    """Solve L phi = d - mean(d), with sum(phi) = 0, on an exact connected network."""
+    _, _, potential = _degree_poisson(net)
+    return _result(net, 'degree_potential', potential)
+
+
+def laplacian_circumsphere(net):
+    """Return the exact center and squared radius in Laplacian Gram geometry.
+
+    This uses L as the centered Gram matrix, while circumsphere uses L^+.
+    The network must be exact, nonempty and connected.
+    """
+    mean, source, potential = _degree_poisson(net)
+    uniform = Fraction(1, len(source))
+    center = Coordinates(net.context, tuple(uniform + value / 2 for value in potential.values))
+    # The centroid contribution is mean(d); the displacement adds b^T phi / 4.
+    radius = mean + sum(b * phi for b, phi in zip(source, potential.values)) / 4
+    result = LaplacianCircumsphereResult(radius, center, potential)
+    return _result(net, 'laplacian_circumsphere', result)
 
 
 def spanning_tree_weight(net, *, componentwise=False):
