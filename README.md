@@ -48,6 +48,12 @@ python -m venv .venv
 Перебор лесов и цветовых классов рассчитан на небольшие графы.
 Пример `python -m examples.partition_toponomes`.
 
+`vertex_toponome` применяет корневой вес к каждому типу перед группировкой.
+`laplacian_polynomial` возвращает точные коэффициенты `det(I + tL)`
+от свободного члена к старшему, а `rooted_forest_weight` вычисляет вес лесов
+с одним заданным корнем на компоненту через главный минор исходного лапласиана.
+Пример `python -m examples.polynomial_toponomes`.
+
 `polyform_algebra.core.circumsphere(net)` вычисляет резистивный радиус
 и би-координаты центра описанной сферы связного графа в рациональных
 дробях. Пример: `python -m examples.exact_circumspheres`.

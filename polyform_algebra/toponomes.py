@@ -2,9 +2,13 @@
 
 from collections import Counter
 from itertools import combinations, permutations
+from math import prod
+
+from sympy import Matrix
 
 from .combinatorics import _lengths
-from .core.data import Network, _number
+from .core.data import InvalidInput, Network, _labels, _number
+from .core.network_math import laplacian
 
 
 def _positive_type(parts):
@@ -31,14 +35,18 @@ def partition_toponome(terms):
     )
 
 
+def _require_exact_network(net):
+    if not isinstance(net, Network) or net.context.arithmetic != "exact":
+        raise TypeError("expected a network with exact conductances")
+
+
 def forest_toponome(net):
     """Sum exact conductance products over spanning forests by positive type.
 
     The empty forest has coefficient one. The enumeration is exponential in
     general and is intended for small undirected graphs.
     """
-    if not isinstance(net, Network) or net.context.arithmetic != "exact":
-        raise TypeError("expected a network with exact conductances")
+    _require_exact_network(net)
     labels = net.context.labels
     positions = {label: position for position, label in enumerate(labels)}
     edges = [(positions[a], positions[b], weight) for a, b, weight in net.edges]
@@ -125,3 +133,45 @@ def coefficient_table(toponome):
     return _collect(
         ((sum(parts), len(parts)), coefficient) for parts, coefficient in terms
     )
+
+
+def vertex_toponome(toponome):
+    """Apply the root-choice weight to each type before any grouping.
+
+    A part of grade k contributes k + 1 possible roots. The empty type has
+    weight one. Coefficients may be signed rational numbers.
+    """
+    terms = ((_positive_type(kind), _number(coefficient, "exact"))
+             for kind, coefficient in toponome.items())
+    return _collect((parts, coefficient * prod(k + 1 for k in parts))
+                    for parts, coefficient in terms)
+
+
+def laplacian_polynomial(net):
+    """Return the exact coefficients of det(I + t L), constant term first.
+
+    The matrix route uses the characteristic polynomial of L, without
+    enumerating forests. Trailing zero coefficients are omitted.
+    """
+    _require_exact_network(net)
+    coefficients = Matrix(laplacian(net).value.values).charpoly().all_coeffs()
+    while len(coefficients) > 1 and coefficients[-1] == 0:
+        coefficients.pop()
+    return tuple(_number((-1)**k * value, "exact") for k, value in enumerate(coefficients))
+
+
+def rooted_forest_weight(net, roots):
+    """Sum weights of spanning forests with exactly one prescribed root per component.
+
+    Roots are unique vertex labels. The principal minor uses the rows and
+    columns of nonroots in the original Laplacian. If every vertex is a root,
+    the empty minor has determinant one.
+    """
+    _require_exact_network(net)
+    roots = set(_labels(roots))
+    labels = net.context.labels
+    if not roots.issubset(labels):
+        raise InvalidInput("roots must be network vertex labels")
+    keep = [i for i, label in enumerate(labels) if label not in roots]
+    matrix = Matrix(laplacian(net).value.values)
+    return _number(matrix.extract(keep, keep).det(), "exact")
