@@ -35,6 +35,12 @@ python -m venv .venv
 
 ## Контексты и точная арифметика
 
+`polyform_algebra.directed.DirectedNetwork` вычисляет исходящий лапласиан,
+остовные потенциалы и точную балансировку. Для связных балансовых графов
+доступны центрированный гриниан, односторонние резистенсы и грамиан вершин.
+Перебор направленных лесов предназначен для малых графов.
+Пример `python -m examples.balanced_graphs`.
+
 `polyform_algebra.combinatorics` вычисляет целочисленные потенциалы
 `second_kind_potential(block_sizes)`, `first_kind_potential(cycle_lengths)`
 и `path_cycle_potential(cycle_lengths, path_lengths)`. Размеры блоков
