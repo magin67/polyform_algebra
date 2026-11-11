@@ -55,17 +55,24 @@ def forest_toponome(net):
 
 
 def _forest_types(order, edges):
-    def forests(start, components, weight):
-        sizes = Counter(components).values()
-        yield tuple(sorted((size - 1 for size in sizes if size > 1), reverse=True)), weight
+    return _collect(
+        (tuple(sorted((size - 1 for size in Counter(components).values() if size > 1),
+                      reverse=True)), weight)
+        for components, _, weight in _spanning_forest_components(order, edges)
+    )
+
+
+def _spanning_forest_components(order, edges):
+    def forests(start, components, grade, weight):
+        yield components, grade, weight
         for offset in range(start, len(edges)):
             a, b, conductance = edges[offset]
             first, second = components[a], components[b]
             if first != second:
                 merged = tuple(first if component == second else component for component in components)
-                yield from forests(offset + 1, merged, weight * conductance)
+                yield from forests(offset + 1, merged, grade + 1, weight * conductance)
 
-    return _collect(forests(0, tuple(range(order)), 1))
+    yield from forests(0, tuple(range(order)), 0, 1)
 
 
 def _matched_types(left, right):
