@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from sympy import Matrix, Symbol, expand
+from sympy import Dummy, Matrix, Poly, Symbol, expand
 
 from .core import InvalidInput, laplacian
 from .core.data import _labels, _number
@@ -90,15 +90,63 @@ def spectral_pair_passport(net, boundary, variable=Symbol("x")):
     _, positions = _boundary_positions(net, boundary)
     if len(positions) != 2:
         raise InvalidInput("spectral pair passport requires two boundary vertices")
-    a, b = positions
+    return _pencil_passport(_laplacian_pencil(net, variable), positions)
+
+
+def _laplacian_pencil(net, variable):
     matrix = Matrix(laplacian(net).value.values)
-    pencil = variable * Matrix.eye(matrix.rows) - matrix
-    interior = [i for i in range(matrix.rows) if i not in positions]
+    return variable * Matrix.eye(matrix.rows) - matrix
+
+
+def _pencil_passport(pencil, positions):
+    a, b = positions
+    indices = list(range(pencil.rows))
+    without_a = [i for i in indices if i != a]
+    without_b = [i for i in indices if i != b]
+    interior = [i for i in indices if i not in positions]
+
+    def minor(rows, columns):
+        return expand(pencil.extract(rows, columns).det(method="domain-ge"))
+
     return (
-        expand(pencil.det()),
-        expand(pencil.cofactor(a, a)), expand(pencil.cofactor(b, b)),
-        expand(pencil.cofactor(b, a)), expand(pencil.extract(interior, interior).det()),
+        minor(indices, indices), minor(without_a, without_a),
+        minor(without_b, without_b), (-1)**(a+b) * minor(without_b, without_a),
+        minor(interior, interior),
     )
+
+
+def spectral_pair_transfer(kernel, entry, exit, variable=Symbol("x"), *, shared_conductance=0):
+    """Return the five-coordinate transfer for attaching a two-terminal kernel.
+
+    Entry labels identify the previous graph's ordered boundary. Exit labels
+    may overlap the entry or be disjoint. Supply the conductance of a shared
+    terminal edge to count that edge once; otherwise the conductances add.
+    Polynomial minors define the map even at zeros of the old interior minor.
+    """
+    _, entry_positions = _boundary_positions(kernel, entry)
+    _, exit_positions = _boundary_positions(kernel, exit)
+    if len(entry_positions) != 2 or len(exit_positions) != 2:
+        raise InvalidInput("transfer requires two entry and two exit vertices")
+    shared = _number(shared_conductance, "exact")
+    if shared < 0:
+        raise InvalidInput("shared conductance must be nonnegative")
+
+    first, second = entry_positions
+    pencil = _laplacian_pencil(kernel, variable)
+    u, v, w = Dummy("u"), Dummy("v"), Dummy("w")
+    pencil[first, first] += shared - variable + u
+    pencil[second, second] += shared - variable + w
+    pencil[first, second] += v - shared
+    pencil[second, first] += v - shared
+    rows = []
+    for minor in _pencil_passport(pencil, exit_positions):
+        coefficients = Poly(minor, u, v, w)
+        coefficient = coefficients.coeff_monomial
+        # Replace the old Schur entries by C/E, -D/E, B/E and its
+        # determinant by A/E using Jacobi's identity.
+        rows.append([coefficient(u*w), coefficient(w), coefficient(u),
+                     -coefficient(v), coefficient(1)])
+    return Matrix(rows)
 
 
 def pair_spectral_passports(first, second, variable=Symbol("x"), *, shared_conductance=0):
